@@ -1,0 +1,36 @@
+apply plugin: 'java-library'
+apply plugin: 'kotlin'
+
+dependencies {
+    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+}
+
+sourceCompatibility = "1.7"
+targetCompatibility = "1.7"
+buildscript {
+    ext.kotlin_version = '1.2.41'
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
+repositories {
+    mavenCentral()
+}
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = "1.6"
+    }
+}
+compileTestKotlin {
+    kotlinOptions {
+        jvmTarget = "1.6"
+    }
+}
+
+task blah(dependsOn: ':EmulatorCore:build', type: JavaExec) {
+    classpath sourceSets.main.runtimeClasspath
+    main = 'com.kkoser.emulatorcore.MainKt'
+}
