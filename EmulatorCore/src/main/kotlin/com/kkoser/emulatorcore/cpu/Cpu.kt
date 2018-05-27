@@ -1,24 +1,52 @@
 package com.kkoser.emulatorcore.cpu
 
-class Cpu constructor(memory: Array<Int>) {
+import com.kkoser.emulatorcore.getHigh8Bits
+import com.kkoser.emulatorcore.getLow8Bits
+import com.kkoser.emulatorcore.memory.MemoryBus
+import com.kkoser.emulatorcore.toIntWithLowerInt
+import java.util.logging.Level
+import java.util.logging.Logger
+
+class Cpu constructor(memory: MemoryBus) {
     // These values need to be internal so they can be accessed and modified from the extension methods
     internal val registers = Registers()
     internal var pc = 0x100
     internal var stackPointer = 0xFFFE
-    internal var memory: Array<Int>
+    internal val memory = memory
 
-    init {
-        this.memory = memory
+    enum class Flag(val mask: Int) {
+        Z(0b10000000), N(0b001000000), H(0b00100000), C(0b00010000)
     }
 
-    fun tick() {
-        // Read opcode
-        // Perform op
-        pc++
-
-        val opcode = 0x0
+    /**
+     * Performs the next pending operation at the current pc
+     * @return The number of cycles this operation took, so that other pieces of hardware can be emulated the same
+     * number of cycles
+     */
+    fun tick(): Int {
+        val opcode = memory.read(pc)
         val operation = OpCodes.opCodes[opcode] ?: throw IllegalArgumentException("Unsupported operation type: $opcode")
-        operation.invoke(this)
+        Logger.getGlobal().log(Level.INFO, "Running command ${operation.title} at pc $pc")
+        operation.operation(this)
+
+        pc += operation.numBytes
+
+        return operation.cycles
+    }
+
+    internal fun setFlag(flag: Flag, on: Boolean = true) {
+        if (on) {
+            registers.set(Registers.Bit8.F, registers.get(Registers.Bit8.F) or flag.mask)
+        } else {
+            registers.set(Registers.Bit8.F, registers.get(Registers.Bit8.F) and flag.mask.inv())
+        }
+    }
+
+    /**
+     * Returns whether or not a flag is currently set to true
+     */
+    fun checkFlag(flag: Flag): Boolean {
+        return registers.get(Registers.Bit8.F) and flag.mask > 0
     }
 
 }
@@ -30,88 +58,54 @@ class Cpu constructor(memory: Array<Int>) {
  * Kotlin, so in order to avoid complex conversions, we just use Ints instead with some custom wrapping logic to ensure
  * the behavior matches an unsigned Byte
  */
-internal class Registers {
+class Registers {
     companion object {
-        val MAX_VALUE = 255
-        enum class Flag(val bit: Int) {
-            Z(7), N(6), H(5), C(4)
-        }
+        const val MAX_VALUE = 255
     }
 
+    // Initially, since there are only 8 registers, each was a separate property. However, since many instructions
+    // perform the same operation on with different registers, this approach allows us to write less duplicated opcodes
+    private val registers = Array(Bit8.values().size, {0})
+
+    enum class Bit8(val index: Int) {
+        A(0), B(1), C(2), D(3), E(4), F(5), H(6), L(7)
+    }
+
+    enum class Bit16(val high: Bit8, val low: Bit8) {
+        AF(Bit8.A, Bit8.F), BC(Bit8.B, Bit8.C), DE(Bit8.D, Bit8.E), HL(Bit8.H, Bit8.L)
+    }
+
+
     // Starting values for these found here: http://www.codeslinger.co.uk/pages/projects/gameboy/hardware.html
-    var a: Int = 0x01
-        set(value) {
-            field = setValue(value)
-        }
-    var b: Int = 0xB0
-        set(value) {
-            field = setValue(value)
-        }
-    var c: Int = 0x00
-        set(value) {
-            field = setValue(value)
-        }
-    var d: Int = 0x13
-        set(value) {
-            field = setValue(value)
-        }
-    var e: Int = 0x00
-        set(value) {
-            field = setValue(value)
-        }
-    var f: Int = 0xD8
-        set(value) {
-            field = setValue(value)
-        }
-    var h: Int = 0x01
-        set(value) {
-            field = setValue(value)
-        }
-    var l: Int = 0x4D
-        set(value) {
-            field = setValue(value)
-        }
 
-    // Computed WORD registers
-    var af: Int = 0
-        get() {
-            return a.toIntWithLowerInt(f)
-        }
-        set(value) {
-            field = setValue(value)
-        }
-    var bc: Int = 0
-        get() {
-            return b.toIntWithLowerInt(c)
-        }
-        set(value) {
-            field = setValue(value)
-        }
-    var de: Int = 0
-        get() {
-            return d.toIntWithLowerInt(e)
-        }
-        set(value) {
-            field = setValue(value)
-        }
-    var hl: Int = 0
-        get() {
-            return h.toIntWithLowerInt(l)
-        }
-        set(value) {
-            field = setValue(value)
-        }
+    fun get(register: Bit8) : Int {
+        return registers[register.index]
+    }
 
-    fun setValue(value: Int): Int {
+    fun get(register: Bit16): Int {
+        val highVale = get(register.high)
+        val lowValue = get(register.low)
+
+        return highVale.toIntWithLowerInt(lowValue)
+    }
+
+    fun set(register: Bit8, value: Int) {
         // If we overwrote, set the carry flag
         // TODO: We maybe shouldn't be setting this in all cases?
         if (value > MAX_VALUE) {
-            f = Flag.C.bit
+//            registers[Bit8.F.index] = Cpu.Flag.C.bit
         }
-        return value % MAX_VALUE
+        val newValue = value % MAX_VALUE
+        if (newValue < 0 || newValue > MAX_VALUE) {
+            throw RuntimeException("the value in the 8 bit register is not a valid unsiged byte value, something isnt working right")
+        }
+
+        registers[register.index] = newValue
+    }
+
+    fun set(register: Bit16, value: Int) {
+        set(register.high, value.getHigh8Bits())
+        set(register.low, value.getLow8Bits())
     }
 }
 
-fun Int.toIntWithLowerInt(lowerInt: Int): Int {
-    return ((this shl 8) or lowerInt)
-}

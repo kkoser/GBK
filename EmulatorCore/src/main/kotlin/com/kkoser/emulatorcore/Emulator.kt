@@ -1,14 +1,9 @@
 package com.kkoser.emulatorcore
 
-class Emulator {
-    companion object {
+import com.kkoser.emulatorcore.cpu.Cpu
 
-        /**
-         * Main method included for easy local testing during development
-         */
-        @JvmStatic
-        fun main(vararg args: String) {
-            println("Hello world!")
-        }
-    }
+class Emulator(cpu: Cpu) {
+    val cpu = cpu
+
+
 }
