@@ -8,7 +8,7 @@ import java.io.File
 
 fun main(vararg args: String) {
 
-    val gameFile = File("/Users/kkoser/Projects/GBK/cpu_tests.gb")
+    val gameFile = File("/Users/kkoser/Projects/GBK/tetris.gb")
 
     val rom = BasicROM(gameFile)
     val memoryBus = MemoryBus(rom)
@@ -19,7 +19,7 @@ fun main(vararg args: String) {
     println("Got byte: ${Integer.toHexString(firstByte)}")
     println("Got second byte: ${Integer.toHexString(secondByte)}")
 
-    for (i in 1..100) {
+    while(true) {
         cpu.tick()
     }
 

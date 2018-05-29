@@ -1,31 +1,30 @@
 package com.kkoser.emulatorcore.cpu
 
-import com.kkoser.emulatorcore.memory.CartridgeMemory
 import com.kkoser.emulatorcore.memory.MemoryBus
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
-class TestMemory : CartridgeMemory {
-    private var memory = arrayOf(
-            0x06, 0xCC // load CC into B
-    )
-
-    override fun read(position: Int): Int {
-        return memory[position]
-    }
-
-    override fun write(position:Int, value: Int) {
-        memory[position] = value
-    }
-
-    fun setROM(vals: Array<Int>) {
-        memory = vals
-    }
-}
+//class TestMemory : CartridgeMemory {
+//    private var memory = arrayOf(
+//            0x06, 0xCC // load CC into B
+//    )
+//
+//    override fun read(position: Int): Int {
+//        return memory[position]
+//    }
+//
+//    override fun write(position: Int, value: Int) {
+//        memory[position] = value
+//    }
+//
+//    fun setROM(vals: Array<Int>) {
+//        memory = vals
+//    }
+//}
 
 class CpuTests {
-    val testMemory =  TestMemory()
+    val testMemory = TestMemory()
     val memory = MemoryBus(testMemory)
     val cpu = Cpu(memory)
 
@@ -41,6 +40,8 @@ class CpuTests {
         for (register in Registers.Bit16.values()) {
             cpu.registers.set(register, 0)
         }
+
+        cpu.registers.set(Registers.Bit16.SP, Registers.SP_START)
     }
 
     @Test
@@ -59,6 +60,8 @@ class CpuTests {
         ))
 
         assertEquals(cpu.registers.get(Registers.Bit16.BC), 0xCCBB)
+        assertEquals(0xCC, cpu.registers.get(Registers.Bit8.B))
+        assertEquals(0xBB, cpu.registers.get(Registers.Bit8.C))
     }
 
     @Test
@@ -66,7 +69,7 @@ class CpuTests {
         cpu.registers.set(Registers.Bit8.A, 0xFC)
         cpu.registers.set(Registers.Bit16.BC, 0xC300)
         runCpuWithInstructions(arrayOf(
-            0x02
+                0x02
         ))
 
         assertEquals(0xFC, cpu.memory.read(0xC300))
@@ -92,6 +95,28 @@ class CpuTests {
         ))
 
         assertEquals(0xCCBC, cpu.registers.get(Registers.Bit16.BC))
+    }
+
+    @Test
+    fun pushAndPopSameValue() {
+        cpu.push(0x5060)
+        cpu.popInto(Registers.Bit16.HL)
+
+        assertEquals(0x5060, cpu.registers.get(Registers.Bit16.HL))
+    }
+
+    @Test
+    fun pushAndPopMultipleValues() {
+        cpu.push(0x5060)
+        cpu.push(0x1234)
+        cpu.push(0x5678)
+        cpu.popInto(Registers.Bit16.HL)
+        cpu.popInto(Registers.Bit16.DE)
+        cpu.popInto(Registers.Bit16.BC)
+
+        assertEquals(0x5678, cpu.registers.get(Registers.Bit16.HL))
+        assertEquals(0x1234, cpu.registers.get(Registers.Bit16.DE))
+        assertEquals(0x5060, cpu.registers.get(Registers.Bit16.BC))
     }
 
     private fun runCpuWithInstructions(instructions: Array<Int>) {

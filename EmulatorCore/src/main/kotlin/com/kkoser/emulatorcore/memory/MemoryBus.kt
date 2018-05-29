@@ -42,8 +42,55 @@ class MemoryBus(cartridgeMemory: CartridgeMemory) {
                 // TODO: add vlock checks
             }
             in 0xA000..0xBFFF -> {
-                return cartridgeMemory.read(position)
                 // external RAM
+                return cartridgeMemory.read(position)
+            }
+            in 0xC000..0xCFFF -> {
+                // Working ram bank 1
+                return internalRam[position - 0xC000]
+            }
+            in 0xD000..0xDFFF -> {
+                // Work ram bank 2 (only switchable in GBC)
+                return internalRam[position - 0xC000]
+            }
+            in  0xE000..0xFDFF -> {
+                // Echo memory
+            }
+            in 0xFE00..0xFE9F -> {
+                // OAM
+                return oamRam[position - 0xFE00]
+            }
+            in 0xFEA0..0xFEFF -> {
+                // not usabled
+                return 0
+            }
+            in 0xFF00..0xFF7F -> {
+                // IO ports
+            }
+            in 0xFF80..0xFFFE -> {
+                return hram[position - 0xFF80]
+                // HRAM
+            }
+            0xFFFF -> {
+                throw RuntimeException("The cpu wasn't able to intercept the read to the IME")
+                // IME
+            }
+        }
+        return 0
+    }
+
+    fun readSigned(position: Int): Int {
+        when(position) {
+            in 0..0x8000 -> {
+                return cartridgeMemory.readSigned(position)
+            }
+            in 0x8000..0x9FFF -> {
+                // VRAM is only accessible during v/hlock
+                // TODO: add vlock checks
+            }
+            in 0xA000..0xBFFF -> {
+                // external RAM
+                return cartridgeMemory.readSigned(position)
             }
             in 0xC000..0xCFFF -> {
                 // Working ram bank 1
@@ -82,8 +129,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory) {
     fun write(position: Int, value: Int) {
         when(position) {
             in 0..0x8000 -> {
-                Logger.getGlobal().log(Level.SEVERE, "Someone is trying to write to ROM! at address ${Integer.toHexString(position)}", RuntimeException())
-                // ROM is not writable, so this is a no-op
+                cartridgeMemory.write(position, value)
             }
             in 0x8000..0x9FFF -> {
                 // VRAM is only writable during v/hlock
@@ -91,6 +137,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory) {
             }
             in 0xA000..0xBFFF -> {
                 // external RAM
+                cartridgeMemory.write(position, value)
             }
             in 0xC000..0xCFFF -> {
                 // Working ram bank 1
@@ -114,6 +161,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory) {
             }
             in 0xFF80..0xFFFE -> {
                 // HRAM
+                hram[position - 0xFF80] = value
             }
             0xFFFF -> {
                 throw RuntimeException("The cpu wasn't able to intercept the write to the IME")
