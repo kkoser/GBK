@@ -14,6 +14,7 @@ class Cpu constructor(memory: MemoryBus) {
     internal var pc = 0x100
     internal val memory = memory
     internal var halted = false
+    internal var ime = true
 
     private var ticks = 0
 
@@ -31,7 +32,7 @@ class Cpu constructor(memory: MemoryBus) {
         val oldPc = pc
         val opcode = memory.read(pc)
         val operation = OpCodes.opCodes[opcode] ?: throw IllegalArgumentException("Unsupported operation type: ${Integer.toHexString(opcode)}h")
-        Logger.getGlobal().log(Level.INFO, "Running command ${operation.title} at pc ${Integer.toHexString(pc)}h")
+        printDebugState(operation)
         operation.operation(this)
 
         if (!operation.isJump) {
@@ -40,12 +41,14 @@ class Cpu constructor(memory: MemoryBus) {
         } else {
             // PC has already been moved, so we don't need to move it
             if (oldPc == pc) {
-                // Jump was NOT taken
+                // Jump was NOT taken, so move the pc ourselves
+                pc += operation.numBytes
                 return operation.notTakenCycles
             } else {
                 return operation.cycles
             }
         }
+
     }
 
     internal fun setFlag(flag: Flag, on: Boolean = true) {
@@ -61,6 +64,10 @@ class Cpu constructor(memory: MemoryBus) {
      */
     fun checkFlag(flag: Flag): Boolean {
         return registers.get(Registers.Bit8.F) and flag.mask > 0
+    }
+
+    fun printDebugState(operation: Operation) {
+        System.out.println("AF:${Integer.toHexString(registers.get(Registers.Bit16.AF))}; BC:${Integer.toHexString(registers.get(Registers.Bit16.BC))}; DE:${Integer.toHexString(registers.get(Registers.Bit16.DE))}; HL:${Integer.toHexString(registers.get(Registers.Bit16.HL))};    pc:${Integer.toHexString(pc)}, operation:${operation.title}")
     }
 
 }

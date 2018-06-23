@@ -10,7 +10,6 @@ fun Cpu.noop() {
     //no-op
 }
 
-
 // region Loads/Stores
 fun Cpu.loadImmediate8(register: Registers.Bit8) {
     val value = memory.read(pc + 1)
@@ -21,8 +20,8 @@ fun Cpu.loadImmediate8(register: Registers.Bit8) {
 }
 
 fun Cpu.loadImmediate16(register: Registers.Bit16) {
-    val higher = memory.read(pc + 1)
-    val lower = memory.read(pc + 2)
+    val higher = memory.read(pc + 2)
+    val lower = memory.read(pc + 1)
     registers.set(register, (higher shl 8) or lower)
 }
 
@@ -508,7 +507,8 @@ fun Cpu.daa() {
 // region Flow Control
 
 fun Cpu.jumpRelative() {
-    val offset = memory.readSigned(pc + 1)
+    // We add 2 to this, since the jump command is 2 bytes long itself (and counts)
+    val offset = memory.readSigned(pc + 1) + 2
     pc += offset
 }
 

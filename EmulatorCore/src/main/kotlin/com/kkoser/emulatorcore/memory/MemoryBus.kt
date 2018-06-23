@@ -1,7 +1,8 @@
 package com.kkoser.emulatorcore.memory
 
-import java.util.logging.Level
-import java.util.logging.Logger
+import com.kkoser.emulatorcore.Timer
+import com.kkoser.emulatorcore.cpu.InterruptHandler
+import com.kkoser.emulatorcore.toUnsigned8BitInt
 
 /*
 Memory sections:
@@ -18,8 +19,10 @@ Memory sections:
     FF80-FFFE High RAM (HRAM)
     FFFF Interrupt Enable Register
  */
-class MemoryBus(cartridgeMemory: CartridgeMemory) {
+class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler: InterruptHandler) {
     private val cartridgeMemory = cartridgeMemory
+    private val timer = timer
+    private val interruptHandler = interruptHandler
     private val internalRam = Array(8192, {0})
     private val vram = Array(8192, {0})
     // OAM memory holds 40 sprites at 4 bytes each, so 160 bytes
@@ -66,14 +69,34 @@ class MemoryBus(cartridgeMemory: CartridgeMemory) {
             }
             in 0xFF00..0xFF7F -> {
                 // IO ports
+                when(position) {
+                    0xFF04 -> {
+                        return timer.dividerCount
+                    }
+                    0xFF05 -> {
+                        // Timer value
+                        return timer.count
+                    }
+                    0xFF06 -> {
+                        // Timer modulator
+                        return timer.offset
+                    }
+                    0xFF07 -> {
+                        // Timer frequency
+                        throw RuntimeException("trying to read timer frequency, you should go implement that")
+                    }
+                    0xFF0F -> {
+                        // IF register for pending interrupts
+                        return interruptHandler.registerIF
+                    }
+                }
             }
             in 0xFF80..0xFFFE -> {
                 return hram[position - 0xFF80]
                 // HRAM
             }
             0xFFFF -> {
-                throw RuntimeException("The cpu wasn't able to intercept the read to the IME")
-                // IME
+                return interruptHandler.registerIE
             }
         }
         return 0
@@ -113,13 +136,33 @@ class MemoryBus(cartridgeMemory: CartridgeMemory) {
             }
             in 0xFF00..0xFF7F -> {
                 // IO ports
+                when(position) {
+                    0xFF04 -> {
+                        return timer.dividerCount
+                    }
+                    0xFF05 -> {
+                        // Timer value
+                        return timer.count
+                    }
+                    0xFF06 -> {
+                        // Timer modulator
+                        return timer.offset
+                    }
+                    0xFF07 -> {
+                        // Timer frequency
+                        throw RuntimeException("trying to read timer frequency, you should go implement that")
+                    }
+                    0xFF0F -> {
+                        return interruptHandler.registerIF
+                    }
+                }
             }
             in 0xFF80..0xFFFE -> {
                 return hram[position - 0xFF80]
                 // HRAM
             }
             0xFFFF -> {
-                throw RuntimeException("The cpu wasn't able to intercept the read to the IME")
+                return interruptHandler.registerIE
                 // IME
             }
         }
@@ -158,14 +201,38 @@ class MemoryBus(cartridgeMemory: CartridgeMemory) {
             }
             in 0xFF00..0xFF7F -> {
                 // IO ports
+                when(position) {
+                    0xFF04 -> {
+                        // Divider register
+                        timer.resetDivider()
+                    }
+                    0xFF05 -> {
+                        // Timer value
+                        throw RuntimeException("Trying to write the timer value")
+                    }
+                    0xFF06 -> {
+                        // Timer modulator
+                        timer.offset = value
+                    }
+                    0xFF07 -> {
+                        // Timer frequency
+                        timer.setTMC(value)
+                    }
+                    0xFF0F -> {
+                        interruptHandler.registerIF = value.toUnsigned8BitInt()
+                    }
+                    else -> {
+                        throw RuntimeException("unsupported write address ${Integer.toHexString(position)}")
+                    }
+                }
             }
             in 0xFF80..0xFFFE -> {
                 // HRAM
                 hram[position - 0xFF80] = value
             }
             0xFFFF -> {
-                throw RuntimeException("The cpu wasn't able to intercept the write to the IME")
-                // IME
+                // IE
+                interruptHandler.registerIE = value.toUnsigned8BitInt()
             }
         }
     }

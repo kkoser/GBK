@@ -261,7 +261,7 @@ object OpCodes {
 
             0xE0 to Operation(2, 12, "LDH (a8),A", { cpu -> cpu.ldhRegisterValueIntoImmediate() }),
             0xE1 to Operation(1, 12, "POP HL", { cpu -> cpu.popInto(Registers.Bit16.HL) }),
-            0xE2 to Operation(2, 8, "LD (C),A", { cpu -> cpu.loadRegisterAValueIntoIndirectRegisterLocation(Registers.Bit8.C) }),
+            0xE2 to Operation(1, 8, "LD (C),A", { cpu -> cpu.loadRegisterAValueIntoIndirectRegisterLocation(Registers.Bit8.C) }),
             0xE3 to invalid,
             0xE4 to invalid,
             0xE5 to Operation(1, 16, "PUSH HL", { cpu -> cpu.pushRegister(Registers.Bit16.HL) }),
@@ -278,8 +278,8 @@ object OpCodes {
 
             0xF0 to Operation(2, 12, "LDH A,(a8)", { cpu -> cpu.ldhImmediateMemoryLocationIntoRegister() }),
             0xF1 to Operation(1, 12, "POP HL", { cpu -> cpu.popInto(Registers.Bit16.HL) }),
-            0xF2 to Operation(2, 8, "LD A,(C)", { cpu -> cpu.loadIndirectRegisterValueIntoRegisterA(Registers.Bit8.C) }),
-            0xF3 to Operation(1, 4, "DI", { cpu -> throw RuntimeException("Interrupts not implemented yet") }),
+            0xF2 to Operation(1, 8, "LD A,(C)", { cpu -> cpu.loadIndirectRegisterValueIntoRegisterA(Registers.Bit8.C) }),
+            0xF3 to Operation(1, 4, "DI", { cpu -> cpu.ime = false }),
             0xF4 to invalid,
             0xF5 to Operation(1, 16, "PUSH AF", { cpu -> cpu.pushRegister(Registers.Bit16.AF) }),
             0xF6 to Operation(2, 8, "OR d8", { cpu -> cpu.or8Immediate() }),
@@ -287,7 +287,7 @@ object OpCodes {
             0xF8 to Operation(2, 12, "LD HL,SP+r8", { cpu -> cpu.loadRegisterWithImmediateOffsetIntoRegister(Registers.Bit16.HL, Registers.Bit16.SP) }),
             0xF9 to Operation(1, 8, "LD SP,HL", { cpu -> cpu.loadRegisterIntoRegister(Registers.Bit16.SP, Registers.Bit16.HL) }),
             0xFA to Operation(3, 16, "LD A,(a16)", { cpu -> cpu.loadImmediateLocationIntoRegister(Registers.Bit8.A) }),
-            0xFB to Operation(1, 4, "EI", { cpu -> throw RuntimeException("Interrupts not implemented yet!") }),
+            0xFB to Operation(1, 4, "EI", { cpu -> cpu.ime = true }),
             0xFC to invalid,
             0xFD to invalid,
             0xFE to Operation(2, 8, "CP d8", { cpu -> cpu.compareImmediate() }),

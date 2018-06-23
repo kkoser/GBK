@@ -1,31 +1,16 @@
 package com.kkoser.emulatorcore.cpu
 
+import com.kkoser.emulatorcore.Timer
 import com.kkoser.emulatorcore.memory.MemoryBus
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
-//class TestMemory : CartridgeMemory {
-//    private var memory = arrayOf(
-//            0x06, 0xCC // load CC into B
-//    )
-//
-//    override fun read(position: Int): Int {
-//        return memory[position]
-//    }
-//
-//    override fun write(position: Int, value: Int) {
-//        memory[position] = value
-//    }
-//
-//    fun setROM(vals: Array<Int>) {
-//        memory = vals
-//    }
-//}
-
 class CpuTests {
+    val timer = Timer()
     val testMemory = TestMemory()
-    val memory = MemoryBus(testMemory)
+    val interruptHandler = DefaultInterruptHandler()
+    val memory = MemoryBus(testMemory, timer, interruptHandler)
     val cpu = Cpu(memory)
 
     @Before
@@ -59,9 +44,9 @@ class CpuTests {
                 0x01, 0xCC, 0xBB
         ))
 
-        assertEquals(cpu.registers.get(Registers.Bit16.BC), 0xCCBB)
-        assertEquals(0xCC, cpu.registers.get(Registers.Bit8.B))
-        assertEquals(0xBB, cpu.registers.get(Registers.Bit8.C))
+        assertEquals(cpu.registers.get(Registers.Bit16.BC), 0xBBCC)
+        assertEquals(0xBB, cpu.registers.get(Registers.Bit8.B))
+        assertEquals(0xCC, cpu.registers.get(Registers.Bit8.C))
     }
 
     @Test
@@ -94,7 +79,7 @@ class CpuTests {
 
         ))
 
-        assertEquals(0xCCBC, cpu.registers.get(Registers.Bit16.BC))
+        assertEquals(0xBBCD, cpu.registers.get(Registers.Bit16.BC))
     }
 
     @Test
@@ -121,7 +106,7 @@ class CpuTests {
 
     private fun runCpuWithInstructions(instructions: Array<Int>) {
         testMemory.setROM(instructions)
-        while (cpu.pc < instructions.size) {
+        while(cpu.pc < instructions.size) {
             cpu.tick()
         }
     }
