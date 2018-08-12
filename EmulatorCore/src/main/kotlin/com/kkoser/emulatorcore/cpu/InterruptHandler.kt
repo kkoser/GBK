@@ -22,7 +22,7 @@ interface InterruptHandler {
          * by shifting 1 left ordinal + 1 times
          */
         fun mask(): Int {
-            return (1 shl (ordinal + 1))
+            return (1 shl (ordinal))
         }
     }
 
@@ -53,7 +53,12 @@ class DefaultInterruptHandler : InterruptHandler {
     }
 
     override fun handleInterrupts(cpu: Cpu) {
-        if (!cpu.ime) return
+        if (!cpu.ime) {
+            // Clear all the pending interrupts since we arent going to service them anyway
+            // TODO: Is the correct approach? if so refactor to not do this all time, but to just not accept interrupts
+            registerIF = 0
+            return
+        }
 
         InterruptHandler.Interrupt.values().forEach { value ->
             if (registerIF and value.mask() == value.mask()) {
@@ -66,11 +71,11 @@ class DefaultInterruptHandler : InterruptHandler {
     }
 
     override fun toggleInterrupt(interrupt: InterruptHandler.Interrupt) {
-        registerIE = registerIF or interrupt.mask()
+        registerIF = registerIF or interrupt.mask()
     }
 
     private fun clearInterrupt(interrupt: InterruptHandler.Interrupt) {
-        registerIE = registerIF and interrupt.mask().inv()
+        registerIF = registerIF and interrupt.mask().inv()
     }
 }
 

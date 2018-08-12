@@ -8,7 +8,7 @@ import com.kkoser.emulatorcore.toUnsigned8BitInt
 import java.util.logging.Level
 import java.util.logging.Logger
 
-class Cpu constructor(memory: MemoryBus) {
+class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
     // These values need to be internal so they can be accessed and modified from the extension methods
     internal val registers = Registers()
     internal var pc = 0x100
@@ -17,9 +17,10 @@ class Cpu constructor(memory: MemoryBus) {
     internal var ime = true
 
     private var ticks = 0
+    private var debug: Boolean = debug
 
     enum class Flag(val mask: Int) {
-        Z(0b10000000), N(0b001000000), H(0b00100000), C(0b00010000)
+        Z(0b10000000), N(0b01000000), H(0b00100000), C(0b00010000)
     }
 
     /**
@@ -29,11 +30,23 @@ class Cpu constructor(memory: MemoryBus) {
      */
     fun tick(): Int {
         ticks++
+        if (pc > 0x7FFF) {
+            throw RuntimeException("pc is out of RAM memory range, probably shouldn't be here")
+        }
         val oldPc = pc
         val opcode = memory.read(pc)
         val operation = OpCodes.opCodes[opcode] ?: throw IllegalArgumentException("Unsupported operation type: ${Integer.toHexString(opcode)}h")
-        printDebugState(operation)
+
+        if (ticks % 1 == 0) {
+            System.out.println("total ticks $ticks")
+            printDebugState(operation)
+        }
+
         operation.operation(this)
+
+        if (pc == 0x282a) {
+            throw RuntimeException("filling vram?")
+        }
 
         if (!operation.isJump) {
             pc += operation.numBytes
@@ -67,7 +80,18 @@ class Cpu constructor(memory: MemoryBus) {
     }
 
     fun printDebugState(operation: Operation) {
-        System.out.println("AF:${Integer.toHexString(registers.get(Registers.Bit16.AF))}; BC:${Integer.toHexString(registers.get(Registers.Bit16.BC))}; DE:${Integer.toHexString(registers.get(Registers.Bit16.DE))}; HL:${Integer.toHexString(registers.get(Registers.Bit16.HL))};    pc:${Integer.toHexString(pc)}, operation:${operation.title}")
+        if (!debug)
+            return
+        System.out.println("A: ${Integer.toHexString(registers.get(Registers.Bit8.A))}; F: ${describeFlags()}; BC:${Integer.toHexString(registers.get(Registers.Bit16.BC))}; DE:${Integer.toHexString(registers.get(Registers.Bit16.DE))}; HL:${Integer.toHexString(registers.get(Registers.Bit16.HL))}; SP:${Integer.toHexString(registers.get(Registers.Bit16.SP))}    pc:${Integer.toHexString(pc)}, operation:${operation.title}")
+    }
+
+    fun describeFlags(): String {
+        val z = if (checkFlag(Flag.Z)) "Z" else "-"
+        val n = if (checkFlag(Flag.N)) "N" else "-"
+        val h = if (checkFlag(Flag.H)) "H" else "-"
+        val c = if (checkFlag(Flag.C)) "C" else "-"
+
+        return z+n+h+c
     }
 
 }

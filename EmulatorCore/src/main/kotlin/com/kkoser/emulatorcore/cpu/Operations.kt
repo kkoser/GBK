@@ -34,6 +34,10 @@ fun Cpu.storeIntoImmediateMemoryLocation(source: Registers.Bit16) {
     memory.write(location, registers.get(source))
 }
 
+fun Cpu.storeImmediateIntoIndirectMemoryLocation(source: Registers.Bit16) {
+    memory.write(registers.get(source), memory.read(pc + 1))
+}
+
 fun Cpu.loadRegisterIntoIndirectLocation(location: Registers.Bit16, value: Registers.Bit8 ) {
     memory.write(registers.get(location), registers.get(value))
 }
@@ -71,8 +75,8 @@ fun Cpu.loadIndirectValueIntoRegisterAndDecrement(destination: Registers.Bit8, s
 }
 
 fun Cpu.loadRegisterIntoImmediateLocation(valueRegister: Registers.Bit8) {
-    val higher = memory.read(pc + 1)
-    val lower = memory.read(pc + 2)
+    val lower = memory.read(pc + 1)
+    val higher = memory.read(pc + 2)
     val location = ((higher shl 8) or lower).toUnsigned16BitInt()
     memory.write(location, registers.get(valueRegister))
 }
@@ -573,13 +577,13 @@ fun Cpu.retFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
 }
 
 fun Cpu.call(location: Int) {
-    push(pc)
+    push(pc + 3)
     pc = location.toUnsigned16BitInt()
 }
 
 fun Cpu.callImmediate() {
-    val higher = memory.read(pc + 1)
-    val lower = memory.read(pc + 2)
+    val lower = memory.read(pc + 1)
+    val higher = memory.read(pc + 2)
     val location = ((higher shl 8) or lower)
 
     call(location)

@@ -16,3 +16,7 @@ fun Int.getLow8Bits(): Int {
 fun Int.getHigh8Bits(): Int {
     return (this ushr 8).getLow8Bits()
 }
+
+fun Int.checkBit(bit: Int): Boolean {
+    return ((1 shl bit) and this) > 0
+}

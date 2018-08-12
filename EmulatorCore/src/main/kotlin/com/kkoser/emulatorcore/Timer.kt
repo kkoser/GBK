@@ -41,8 +41,6 @@ class Timer {
             count = offset
             interruptHandler.interrupt(InterruptHandler.Interrupt.CLOCK)
         }
-
-
     }
 
     fun setTMC(memoryValue: Int) {
