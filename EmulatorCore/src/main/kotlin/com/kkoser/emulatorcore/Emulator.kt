@@ -4,7 +4,6 @@ import com.kkoser.emulatorcore.cpu.Cpu
 import com.kkoser.emulatorcore.cpu.InterruptHandler
 import com.kkoser.emulatorcore.gpu.Lcd
 import com.kkoser.emulatorcore.memory.MemoryBus
-import sun.rmi.runtime.Log
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -16,7 +15,7 @@ class Emulator(val cpu: Cpu,
 
     fun run() {
         var totalInstructions = 0L
-        for (i in 0..800000){
+        for (i in 0..2500000){
             interruptHandler.handleInterrupts(cpu)
             val cycles = cpu.tick()
             totalInstructions++

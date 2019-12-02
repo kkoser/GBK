@@ -1,5 +1,8 @@
 package com.kkoser.emulatorcore.cpu
 
+import java.util.logging.Level
+import java.util.logging.Logger
+
 /**
  * An Operation can make changes to the Cpu
  *
@@ -236,7 +239,8 @@ object OpCodes {
             0xC8 to Operation(1, 20, "RET Z", { cpu -> cpu.retFlag(Cpu.Flag.Z, true) }, true, 8),
             0xC9 to Operation(1, 16, "RET", { cpu -> cpu.ret() }, true, 16),
             0xCA to Operation(3, 16, "JP Z,a16", { cpu -> cpu.jumpImmediateFlag(Cpu.Flag.Z, true) }, true, 12),
-            0xCB to Operation(1, 4, "PREFIX CB", { cpu -> throw RuntimeException("Stupid prefix commands not done yet") }),
+//            0xCB to Operation(1, 4, "PREFIX CB", { cpu -> throw RuntimeException("Stupid prefix commands not done yet at pc:${Integer.toHexString(cpu.pc)} next code ${Integer.toHexString(cpu.memory.read(cpu.pc + 1))}") }),
+            0xCB to Operation(1, 4, "PREFIX CB", { cpu -> cpu.requestPrefixOpcodes() }),
             0xCC to Operation(3, 24, "CALL Z,a16", { cpu -> cpu.callImmediateFlag(Cpu.Flag.Z, true) }, true, 12),
             0xCD to Operation(3, 24, "CALL a16", { cpu -> cpu.callImmediate() }, true, 24),
             0xCE to Operation(2, 8, "ADC A,d8", { cpu -> cpu.adcImmediate() }),

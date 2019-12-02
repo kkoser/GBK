@@ -8,17 +8,25 @@ import java.util.logging.Logger
 class BasicROM(val file: File) : CartridgeMemory {
 
     private val memory: Array<Int>
+    private val ram: Array<Int>
 
     init {
         val bytes = file.readBytes()
         memory = Array(bytes.size, { i: Int -> bytes[i].toInt() })
+        ram = Array(0xBFFF-0xA000) {0}
     }
 
     override fun read(position: Int): Int {
+//        if (position >= 0xA000) {
+//            return ram[position-0xA000-1].toUnsigned8BitInt()
+//        }
         return memory[position].toUnsigned8BitInt()
     }
 
     override fun readSigned(position: Int): Int {
+//        if (position >= 0xA000) {
+//            return ram[position-0xA000]
+//        }
         return memory[position]
     }
 
@@ -28,6 +36,10 @@ class BasicROM(val file: File) : CartridgeMemory {
 //        if (position <= 0x8000) {
 //            Logger.getGlobal().log(Level.SEVERE, "Someone is trying to write to ROM! at address ${Integer.toHexString(position)}, value ${Integer.toHexString(value)}", RuntimeException())
 //            throw RuntimeException()
+//        }
+
+//        if (position >= 0xA000) {
+//            ram[position - 0xA000 - 1] = value
 //        }
     }
 }

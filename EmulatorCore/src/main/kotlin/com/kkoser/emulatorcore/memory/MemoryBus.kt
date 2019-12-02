@@ -28,7 +28,6 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
     private val interruptHandler = interruptHandler
     private val lcd = lcd
     private val internalRam = Array(8192, {0})
-    private val vram = Array(8192, {0})
     private val hram = Array(127, {0})
     fun read(position: Int): Int {
         // Things to implement here:
@@ -147,7 +146,16 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
         return 0
     }
 
-    fun readSigned(position: Int): Int {
+    /**
+     * Read a _signed_ 8 bit value
+     *
+     * Returns a Byte to ensure that values stay int he 8 byte range when being converted from their unsigned representations
+     */
+    fun readSigned(position: Int): Byte {
+        return readSignedInternal(position).toByte()
+    }
+
+    private fun readSignedInternal(position: Int): Int {
         when(position) {
             in 0..0x8000 -> {
                 return cartridgeMemory.readSigned(position)

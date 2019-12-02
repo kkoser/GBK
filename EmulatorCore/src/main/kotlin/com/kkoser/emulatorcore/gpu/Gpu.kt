@@ -1,5 +1,8 @@
 package com.kkoser.emulatorcore.gpu
 
+import com.kkoser.emulatorcore.toHexString
+import java.lang.RuntimeException
+
 data class Color(val red: Int, val green: Int, val blue: Int)
 
 interface Renderer {
@@ -27,6 +30,16 @@ class Gpu(val lcd: Lcd, val renderer: Renderer) {
     }
 
     fun read(location: Int): Int {
+        // vram is accessible anytime other than transfer
+        if (lcd.mode == Lcd.Mode.H_BLANK || lcd.mode == Lcd.Mode.OAM_SEARCH) {
+            when (location) {
+                in 0x8000..0x9FFF -> {
+                    return vram[location - 0x8000]
+                }
+            }
+        }
+
+        // oam ram is only accessible in v blank
         if (lcd.mode == Lcd.Mode.V_BLANK) {
             when (location) {
                 in 0x8000..0x9FFF -> {
@@ -44,6 +57,7 @@ class Gpu(val lcd: Lcd, val renderer: Renderer) {
     }
 
     fun write(location: Int, value: Int) {
+//        throw RuntimeException("Writing to vram at location ${location.toHexString()}")
         if (lcd.mode == Lcd.Mode.V_BLANK) {
             when (location) {
                 in 0x8000..0x9FFF -> {
@@ -51,6 +65,7 @@ class Gpu(val lcd: Lcd, val renderer: Renderer) {
                 }
                 in 0xFE00..0xFE9F -> {
                     // OAM
+                    throw RuntimeException("filling oam ram")
                     oamRam[location - 0xFE00] = value
                 }
             }

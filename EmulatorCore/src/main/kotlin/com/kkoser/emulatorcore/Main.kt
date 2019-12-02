@@ -11,7 +11,7 @@ import java.util.logging.Logger
 
 fun main(vararg args: String) {
 
-    val gameFile = File("/home/kyleskoser/GBK/test.gb")
+    val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
 
     val rom = BasicROM(gameFile)
     val timer = Timer()
@@ -23,12 +23,13 @@ fun main(vararg args: String) {
     val cpu = Cpu(memoryBus, true)
     val emulator = Emulator(cpu, memoryBus, interruptHandler, timer, lcd)
 
-//    try {
-//        emulator.run()
-//    } catch (e: Exception) {
-//        Logger.getGlobal().log(Level.SEVERE, e.message, e.stackTrace)
-//        throw e
-//    }
+    try {
+        emulator.run()
+    } catch (e: Exception) {
+        Logger.getGlobal().log(Level.SEVERE, "caught exception")
+        Logger.getGlobal().log(Level.SEVERE, e.message, e.stackTrace)
+        throw e
+    }
 
-    emulator.run()
+//    emulator.run()
 }

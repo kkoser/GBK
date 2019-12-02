@@ -1,5 +1,7 @@
 package com.kkoser.emulatorcore.cpu
 
+import com.kkoser.emulatorcore.TestInterruptHandler
+import com.kkoser.emulatorcore.TestMemory
 import com.kkoser.emulatorcore.Timer
 import com.kkoser.emulatorcore.gpu.Dma
 import com.kkoser.emulatorcore.gpu.Gpu
@@ -80,23 +82,5 @@ class TimerTests {
         memory.write(0xFF04, 12345)
 
         assertEquals(timer.dividerCount, 0)
-    }
-}
-
-class TestInterruptHandler  : InterruptHandler {
-    override var registerIE = 0b11111
-    override var registerIF = 0b11111
-    var interrupts: MutableList<InterruptHandler.Interrupt> = mutableListOf()
-    override fun interrupt(interrupt: InterruptHandler.Interrupt) {
-        interrupts.add(interrupt)
-    }
-
-
-    override fun handleInterrupts(cpu: Cpu) {
-        // no-op
-    }
-
-    override fun toggleInterrupt(interrupt: InterruptHandler.Interrupt) {
-        // no-op
     }
 }

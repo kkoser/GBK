@@ -1,5 +1,6 @@
 package com.kkoser.emulatorcore.cpu
 
+import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithLowerInt
 import com.kkoser.emulatorcore.toUnsigned16BitInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
@@ -24,6 +25,13 @@ fun Cpu.loadImmediate16(register: Registers.Bit16) {
     val lower = memory.read(pc + 1)
     registers.set(register, (higher shl 8) or lower)
 }
+
+val blah = mutableMapOf<String, String>()
+
+val x: String? = null
+val res = blah.remove(x)
+val list: List<String> = listOf()
+val uniques = list.distinctBy { it != "test" }
 
 /**
  * Stores the value of the given register into the 16 bit address read following the opcode (pc+2)
@@ -96,7 +104,7 @@ fun Cpu.ldhRegisterValueIntoImmediate() {
 }
 
 fun Cpu.ldhImmediateMemoryLocationIntoRegister() {
-    val locationToReadFrom = memory.read(pc + 1) + LDH_OFFSET
+    val locationToReadFrom = memory.read(pc + 1).toUnsigned8BitInt() + LDH_OFFSET
     registers.set(Registers.Bit8.A, memory.read(locationToReadFrom))
 }
 
@@ -114,7 +122,7 @@ fun Cpu.loadRegisterWithImmediateOffsetIntoRegister(destination: Registers.Bit16
     val oldVal = registers.get(source)
     val offset = memory.readSigned(pc + 1)
     val result = oldVal + offset
-    setFlag(Cpu.Flag.H, check8BitCarry(oldVal, offset))
+    setFlag(Cpu.Flag.H, check8BitCarry(oldVal, offset.toInt()))
     setFlag(Cpu.Flag.C, result > 0xFFFF)
 
     setFlag(Cpu.Flag.N, false)
@@ -182,7 +190,7 @@ fun Cpu.decrementMemory(location: Registers.Bit16) {
 fun Cpu.add8Value(arg1: Int, arg2: Int, storeTo: Registers.Bit8) {
     val result = (arg1 + arg2).toUnsigned8BitInt()
     setFlag(Cpu.Flag.H, check8BitCarry(arg1, arg2))
-    setFlag(Cpu.Flag.C, arg1 + arg2 > 0xffff)
+    setFlag(Cpu.Flag.C, (arg1 + arg2 - 0xff) > 0)
 
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.Z, result == 0)
@@ -204,9 +212,9 @@ fun Cpu.add8Immediate() {
 
 fun Cpu.add8ImmediateToSp() {
     val sp = registers.get(Registers.Bit16.SP)
-    val immediate = memory.readSigned(pc + 1)
+    val immediate = memory.readSigned(pc + 1).toByte()
     val result = (sp + immediate).toUnsigned16BitInt()
-    setFlag(Cpu.Flag.H, check8BitCarry(sp, immediate))
+    setFlag(Cpu.Flag.H, check8BitCarry(sp, immediate.toInt()))
     setFlag(Cpu.Flag.C, sp + immediate > 0xffff)
 
     setFlag(Cpu.Flag.Z, false)
@@ -512,7 +520,7 @@ fun Cpu.daa() {
 
 fun Cpu.jumpRelative() {
     // We add 2 to this, since the jump command is 2 bytes long itself (and counts)
-    val offset = memory.readSigned(pc + 1) + 2
+    val offset = memory.readSigned(pc + 1).toByte() + 2
     pc += offset
 }
 
@@ -577,6 +585,7 @@ fun Cpu.retFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
 }
 
 fun Cpu.call(location: Int) {
+    System.out.println("Calling from pc ${pc.toHexString()} to location ${location.toHexString()}")
     push(pc + 3)
     pc = location.toUnsigned16BitInt()
 }
@@ -596,7 +605,7 @@ fun Cpu.callImmediateFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
 }
 
 fun Cpu.reset(location: Int) {
-    push(pc)
+    push(pc+1)
     pc = location
 }
 

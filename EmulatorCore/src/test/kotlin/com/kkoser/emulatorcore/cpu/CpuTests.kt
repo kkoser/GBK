@@ -1,5 +1,6 @@
 package com.kkoser.emulatorcore.cpu
 
+import com.kkoser.emulatorcore.TestMemory
 import com.kkoser.emulatorcore.Timer
 import com.kkoser.emulatorcore.gpu.Dma
 import com.kkoser.emulatorcore.gpu.Gpu

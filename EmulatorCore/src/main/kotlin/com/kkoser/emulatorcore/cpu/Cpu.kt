@@ -3,8 +3,10 @@ package com.kkoser.emulatorcore.cpu
 import com.kkoser.emulatorcore.getHigh8Bits
 import com.kkoser.emulatorcore.getLow8Bits
 import com.kkoser.emulatorcore.memory.MemoryBus
+import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithLowerInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
+import jdk.internal.org.objectweb.asm.Opcodes
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -17,7 +19,9 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
     internal var ime = true
 
     private var ticks = 0
+    private var cycleCount = 0
     private var debug: Boolean = debug
+    private var usePrefixOpcodes: Boolean = false
 
     enum class Flag(val mask: Int) {
         Z(0b10000000), N(0b01000000), H(0b00100000), C(0b00010000)
@@ -30,15 +34,50 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
      */
     fun tick(): Int {
         ticks++
-        if (pc > 0x7FFF) {
-            throw RuntimeException("pc is out of RAM memory range, probably shouldn't be here")
+//        if (pc > 0x7FFF) {
+//            throw RuntimeException("pc is out of RAM memory range at ${pc.toHexString()}, probably shouldn't be here")
+//        }
+
+        if (pc > 0xFFFF) {
+            throw RuntimeException("pc is out of memory memory range at ${pc.toHexString()}")
         }
+
+        if (ticks > 600000) {
+            // print the first tile and quit
+            // print out the first tile
+            for (x in 0..7) {
+                for (y in 0..7) {
+                    val first = memory.read(0xFE00 + (x*y))
+                    val second = memory.read(0xFE00 + (x*y))
+
+                    System.out.print(first.toHexString() + " ; " + second.toHexString())
+                }
+                System.out.println()
+            }
+            throw RuntimeException("loaded tiles testing")
+            return 0
+        }
+
+
         val oldPc = pc
         val opcode = memory.read(pc)
-        val operation = OpCodes.opCodes[opcode] ?: throw IllegalArgumentException("Unsupported operation type: ${Integer.toHexString(opcode)}h")
+        val operation = if (usePrefixOpcodes) PrefixOpcodes.opCodes[opcode] else OpCodes.opCodes[opcode]
 
+        // Can always just reset to false, as if it wsa true we pulled the prefix value, and if it wasnt no harm done
+        usePrefixOpcodes = false
+
+        val cyclesTaken = performOperation(operation, oldPc)
+        cycleCount += cyclesTaken
+
+        return cyclesTaken
+    }
+
+    private fun performOperation(operation: Operation?, oldPc: Int): Int {
+        if (operation == null) {
+            throw IllegalArgumentException("Unsupported operation type: " + Integer.toHexString(memory.read(oldPc)))
+        }
         if (ticks % 1 == 0) {
-            System.out.println("total ticks $ticks")
+            System.out.println("total ticks $ticks, cycles:$cycleCount")
             printDebugState(operation)
         }
 
@@ -61,7 +100,6 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
                 return operation.cycles
             }
         }
-
     }
 
     internal fun setFlag(flag: Flag, on: Boolean = true) {
@@ -82,7 +120,14 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
     fun printDebugState(operation: Operation) {
         if (!debug)
             return
-        System.out.println("A: ${Integer.toHexString(registers.get(Registers.Bit8.A))}; F: ${describeFlags()}; BC:${Integer.toHexString(registers.get(Registers.Bit16.BC))}; DE:${Integer.toHexString(registers.get(Registers.Bit16.DE))}; HL:${Integer.toHexString(registers.get(Registers.Bit16.HL))}; SP:${Integer.toHexString(registers.get(Registers.Bit16.SP))}    pc:${Integer.toHexString(pc)}, operation:${operation.title}")
+        System.out.println("A: ${Integer.toHexString(registers.get(Registers.Bit8.A))}; F: ${describeFlags()}; BC:${Integer.toHexString(registers.get(Registers.Bit16.BC))}; DE:${Integer.toHexString(registers.get(Registers.Bit16.DE))}; HL:${Integer.toHexString(registers.get(Registers.Bit16.HL))}; SP:${Integer.toHexString(registers.get(Registers.Bit16.SP))}  TST:${Integer.toHexString(checkStack())}   pc:${Integer.toHexString(pc)}, operation:${operation.title}")
+    }
+
+    fun checkStack(): Int {
+        val x = popStack()
+        push(x)
+
+        return x
     }
 
     fun describeFlags(): String {
@@ -92,6 +137,10 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         val c = if (checkFlag(Flag.C)) "C" else "-"
 
         return z+n+h+c
+    }
+
+    fun requestPrefixOpcodes() {
+        usePrefixOpcodes = true
     }
 
 }

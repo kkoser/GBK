@@ -7,7 +7,7 @@ import com.kkoser.emulatorcore.memory.MemoryBus
  * copy it over to the gpu when the gpu is ready for it. Essentially, it just copies chunks
  * of memory into a new location
  */
-class Dma() {
+class Dma {
     /**
      * When we write to the DMA register, it kicks off a copy
      * The location to copy from is the location written to * 100

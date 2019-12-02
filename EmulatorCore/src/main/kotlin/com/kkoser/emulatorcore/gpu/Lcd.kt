@@ -2,21 +2,22 @@ package com.kkoser.emulatorcore.gpu
 
 import com.kkoser.emulatorcore.checkBit
 import com.kkoser.emulatorcore.cpu.InterruptHandler
+import org.jetbrains.annotations.TestOnly
 
 class Lcd {
     companion object {
-        val LINE_COUNT = 153
+        val LINE_COUNT = 154
         val V_BLANK_START_LINE = 144
         val SINGLE_LINE_CYCLES = 456
     }
 
     /**
      * A full line takes 456 cycles, composed of OAM_SEARCH, LCD_TRANSFER, and H_BLANK.
-     * V_BLANK is just 10 empty lines, so it is 4560 cycles in length
+     * V_BLANK is just 10 empty lines, so it is 456 cycles in length and done 10 times
      */
     enum class Mode(val value: Int, val lengthInCycles: Int, val interruptControlBit: Int?) {
         H_BLANK(0b00, 204, 3),
-        V_BLANK(0b01, 4560, 4),
+        V_BLANK(0b01, 456, 4),
         OAM_SEARCH(0b10, 80, 5),
         LCD_TRANSFER(0b11, 172, null)
     }
@@ -59,9 +60,9 @@ class Lcd {
     var lineCompare = 0
 
     var currentScanLine = 0
-        private set
+        @TestOnly set
     var mode: Mode = Mode.OAM_SEARCH
-        private set
+        @TestOnly set
 
     private var currentModeCycles = 0
 
@@ -69,9 +70,9 @@ class Lcd {
     private var currentLineCycles = 0
 
     fun tick(cyclesTaken: Int, interruptHandler: InterruptHandler) {
-        if (!enabled()) {
-            return
-        }
+//        if (!enabled()) {
+//            return
+//        }
 
         // Now update the mode
         currentModeCycles += cyclesTaken
@@ -89,18 +90,26 @@ class Lcd {
                     setCurrentLine(currentScanLine + 1, interruptHandler)
                 }
                 Mode.V_BLANK -> {
+                    // We stay in V_BLANK for mutliple lines, so check if we're moving to a new line of V_BLANK
+                    // or starting to actually draw
                     // TODO: Do we need to correctly increment current line during v-blank?
                     // YES WE DO - IMPLEMENT THIS
-                    setCurrentLine(0, interruptHandler)
-                    setMode(Mode.OAM_SEARCH, interruptHandler)
-                    currentLineCycles = 0
+                    if (currentScanLine < LINE_COUNT) {
+//                        setCurrentLine(currentScanLine + 1, interruptHandler)
+                    } else {
+                        setCurrentLine(0, interruptHandler)
+                        setMode(Mode.OAM_SEARCH, interruptHandler)
+                        // TODO: This is not perfectly accurate, we're potentially dropping a couple cycles that could  cause the next vblank to be longer...
+                        currentLineCycles = 0
+                    }
                 }
             }
 
-            if (currentScanLine == V_BLANK_START_LINE) {
+            if (currentScanLine == V_BLANK_START_LINE && mode != Mode.V_BLANK) {
                 setMode(Mode.V_BLANK, interruptHandler)
                 currentLineCycles = currentModeCycles
                 interruptHandler.interrupt(InterruptHandler.Interrupt.V_BLANK)
+                System.out.println("Starting V-BLANK interrupt")
             }
         }
 

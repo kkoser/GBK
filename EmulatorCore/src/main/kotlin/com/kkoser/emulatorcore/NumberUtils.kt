@@ -20,3 +20,7 @@ fun Int.getHigh8Bits(): Int {
 fun Int.checkBit(bit: Int): Boolean {
     return ((1 shl bit) and this) > 0
 }
+
+fun Int.toHexString(): String {
+    return Integer.toHexString(this)
+}
