@@ -25,6 +25,8 @@ class CpuTests {
     fun reset() {
         // Usually, the cpu starts at 0x100, but for tests we don't want the splash screen so we force it to 0
         cpu.pc = 0
+        // disable the boot rom
+        memory.write(0xFF50, 1)
 
         // Clear all registers (which will also clear all flags)
         for (register in Registers.Bit8.values()) {

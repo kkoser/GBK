@@ -26,13 +26,6 @@ fun Cpu.loadImmediate16(register: Registers.Bit16) {
     registers.set(register, (higher shl 8) or lower)
 }
 
-val blah = mutableMapOf<String, String>()
-
-val x: String? = null
-val res = blah.remove(x)
-val list: List<String> = listOf()
-val uniques = list.distinctBy { it != "test" }
-
 /**
  * Stores the value of the given register into the 16 bit address read following the opcode (pc+2)
  */
@@ -212,7 +205,7 @@ fun Cpu.add8Immediate() {
 
 fun Cpu.add8ImmediateToSp() {
     val sp = registers.get(Registers.Bit16.SP)
-    val immediate = memory.readSigned(pc + 1).toByte()
+    val immediate = memory.readSigned(pc + 1)
     val result = (sp + immediate).toUnsigned16BitInt()
     setFlag(Cpu.Flag.H, check8BitCarry(sp, immediate.toInt()))
     setFlag(Cpu.Flag.C, sp + immediate > 0xffff)
@@ -410,84 +403,6 @@ fun Cpu.complementA() {
 
 // endregion
 
-// region Rotates/Shifts
-/**
- * Rotate left into the carry, but do not go through. So the carry flag will be the value of the highest bit of the old
- * value, but the lowest bit of the new value will always be 0
- */
-fun Cpu.rlc(location: Registers.Bit8) {
-    val arg = registers.get(location)
-    var result = (arg shl 1).toUnsigned8BitInt()
-    if (arg and (1 shl 7) != 0) {
-        result = result or 1
-        setFlag(Cpu.Flag.C)
-    } else {
-        setFlag(Cpu.Flag.C, false)
-    }
-    setFlag(Cpu.Flag.Z, result == 0)
-    setFlag(Cpu.Flag.N, false)
-    setFlag(Cpu.Flag.H, false)
-
-    registers.set(location, result)
-}
-
-/**
- * Rotate left THROUGH the carry bit. That is, the top bit of the old value is set as the carry, and the carry bit
- * becomes the first bit of the new value
- */
-fun Cpu.rl(location: Registers.Bit8) {
-    val arg = registers.get(location)
-    var result = (arg shl 1).toUnsigned8BitInt() and 0x01
-    if (arg and (1 shl 7) != 0) {
-        result = result or 1
-        setFlag(Cpu.Flag.C)
-    } else {
-        setFlag(Cpu.Flag.C, false)
-    }
-    setFlag(Cpu.Flag.Z, result == 0)
-    setFlag(Cpu.Flag.N, false)
-    setFlag(Cpu.Flag.H, false)
-
-    registers.set(location, result)
-}
-
-fun Cpu.rrc(location: Registers.Bit8) {
-    val arg = registers.get(location)
-    var result = (arg ushr 1).toUnsigned8BitInt()
-    if (arg and 1 != 0) {
-//        result = result or 1
-        setFlag(Cpu.Flag.C)
-    } else {
-        setFlag(Cpu.Flag.C, false)
-    }
-    setFlag(Cpu.Flag.Z, result == 0)
-    setFlag(Cpu.Flag.N, false)
-    setFlag(Cpu.Flag.H, false)
-
-    registers.set(location, result)
-}
-
-fun Cpu.rr(location: Registers.Bit8) {
-    val arg = registers.get(location)
-    var result = (arg ushr 1).toUnsigned8BitInt()
-
-    // Shift the carry flag into the top bit
-    val carryMask = (if (checkFlag(Cpu.Flag.C)) 1 else 0) shl 7
-    result = result or carryMask
-
-    // Shift the bottom bit into the carry flag
-    if (arg and 1 != 0) {
-        setFlag(Cpu.Flag.C)
-    } else {
-        setFlag(Cpu.Flag.C, false)
-    }
-    setFlag(Cpu.Flag.Z, result == 0)
-    setFlag(Cpu.Flag.N, false)
-    setFlag(Cpu.Flag.H, false)
-
-    registers.set(location, result)
-}
-
 // Borrowed from https://github.com/kotcrab/xgbc/blob/master/src/main/kotlin/com/kotcrab/xgbc/cpu/OpCodesProcessor.kt
 // I'm not super sure what this one does
 fun Cpu.daa() {
@@ -520,7 +435,7 @@ fun Cpu.daa() {
 
 fun Cpu.jumpRelative() {
     // We add 2 to this, since the jump command is 2 bytes long itself (and counts)
-    val offset = memory.readSigned(pc + 1).toByte() + 2
+    val offset = memory.readSigned(pc + 1) + 2
     pc += offset
 }
 

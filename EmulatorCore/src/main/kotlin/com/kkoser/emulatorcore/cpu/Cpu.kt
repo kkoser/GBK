@@ -7,13 +7,15 @@ import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithLowerInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
 import jdk.internal.org.objectweb.asm.Opcodes
+import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode
 import java.util.logging.Level
 import java.util.logging.Logger
 
 class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
     // These values need to be internal so they can be accessed and modified from the extension methods
     internal val registers = Registers()
-    internal var pc = 0x100
+    internal var pc = 0x00
+//    internal var pc = 0x100
     internal val memory = memory
     internal var halted = false
     internal var ime = true
@@ -21,7 +23,6 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
     private var ticks = 0
     private var cycleCount = 0
     private var debug: Boolean = debug
-    private var usePrefixOpcodes: Boolean = false
 
     enum class Flag(val mask: Int) {
         Z(0b10000000), N(0b01000000), H(0b00100000), C(0b00010000)
@@ -42,7 +43,7 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
             throw RuntimeException("pc is out of memory memory range at ${pc.toHexString()}")
         }
 
-        if (ticks > 600000) {
+        if (ticks > 6000000) {
             // print the first tile and quit
             // print out the first tile
             for (x in 0..7) {
@@ -59,12 +60,16 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         }
 
 
+        var usePrefixOpcodes = false
         val oldPc = pc
-        val opcode = memory.read(pc)
+        var opcode = memory.read(pc)
+        if (opcode == 0xCB) {
+            // TODO: Are there any prefixes that read values past current PC? Don't think so
+            // If there are, this may break things
+            opcode = memory.read(pc + 1)
+            usePrefixOpcodes = true
+        }
         val operation = if (usePrefixOpcodes) PrefixOpcodes.opCodes[opcode] else OpCodes.opCodes[opcode]
-
-        // Can always just reset to false, as if it wsa true we pulled the prefix value, and if it wasnt no harm done
-        usePrefixOpcodes = false
 
         val cyclesTaken = performOperation(operation, oldPc)
         cycleCount += cyclesTaken
@@ -138,11 +143,6 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
 
         return z+n+h+c
     }
-
-    fun requestPrefixOpcodes() {
-        usePrefixOpcodes = true
-    }
-
 }
 
 /**
@@ -172,11 +172,17 @@ class Registers {
         AF(Bit8.A, Bit8.F), BC(Bit8.B, Bit8.C), DE(Bit8.D, Bit8.E), HL(Bit8.H, Bit8.L), SP(Bit8.UNUSED, Bit8.UNUSED)
     }
 
+//    init {
+//        set(Bit16.AF, 0x01B0)
+//        set(Bit16.BC, 0x0013)
+//        set(Bit16.DE, 0x00D8)
+//        set(Bit16.HL, 0x014D)
+//    }
     init {
-        set(Bit16.AF, 0x01B0)
-        set(Bit16.BC, 0x0013)
-        set(Bit16.DE, 0x00D8)
-        set(Bit16.HL, 0x014D)
+        set(Bit16.AF, 0)
+        set(Bit16.BC, 0)
+        set(Bit16.DE, 0)
+        set(Bit16.HL, 0)
     }
 
 

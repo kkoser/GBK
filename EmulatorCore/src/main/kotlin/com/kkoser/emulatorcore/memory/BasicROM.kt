@@ -7,6 +7,9 @@ import java.util.logging.Logger
 
 class BasicROM(val file: File) : CartridgeMemory {
 
+    private val x: ArrayList<String> = ArrayList()
+    val y: List<String> = x
+
     private val memory: Array<Int>
     private val ram: Array<Int>
 

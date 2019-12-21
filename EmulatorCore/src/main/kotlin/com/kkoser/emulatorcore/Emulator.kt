@@ -15,7 +15,7 @@ class Emulator(val cpu: Cpu,
 
     fun run() {
         var totalInstructions = 0L
-        for (i in 0..2500000){
+        while (cpu.pc <= 0x100){
             interruptHandler.handleInterrupts(cpu)
             val cycles = cpu.tick()
             totalInstructions++
@@ -25,6 +25,19 @@ class Emulator(val cpu: Cpu,
 //            System.out.println("total cycles $totalCycles")
             timer.tick(cycles, interruptHandler)
             lcd.tick(cycles, interruptHandler)
+        }
+
+        // dump vram
+        // print the first tile and quit
+        // print out the first tile
+        for (x in 0..7) {
+            for (y in 0..7) {
+                val first = memoryBus.read(0xFE00 + (x*y))
+                val second = memoryBus.read(0xFE00 + (x*y))
+
+                System.out.print(first.toHexString() + " ; " + second.toHexString())
+            }
+            System.out.println()
         }
     }
 }
