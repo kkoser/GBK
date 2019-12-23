@@ -39,37 +39,37 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
         - mirror empty part of ram to normal ram?
          */
         when(position) {
-            in 0..0x8000 -> {
+            in 0 until 0x8000 -> {
                 if (bootRomEnabled && position < 0x100) {
                     return gameboyClassicBootRom[position]
                 }
                 return cartridgeMemory.read(position)
             }
-            in 0x8000..0x9FFF -> {
+            in 0x8000 until 0x9FFF -> {
                 // VRAM is only accessible during v/hlock
                 // This check is handled internally by the gpu
                 return gpu.read(position)
             }
-            in 0xA000..0xBFFF -> {
+            in 0xA000 until 0xBFFF -> {
                 // external RAM
                 return cartridgeMemory.read(position)
             }
-            in 0xC000..0xCFFF -> {
+            in 0xC000 until 0xCFFF -> {
                 // Working ram bank 1
                 return internalRam[position - 0xC000]
             }
-            in 0xD000..0xDFFF -> {
+            in 0xD000 until 0xDFFF -> {
                 // Work ram bank 2 (only switchable in GBC)
                 return internalRam[position - 0xC000]
             }
-            in  0xE000..0xFDFF -> {
-                // Echo memory
+            in  0xE000 until 0xFDFF -> {
+                return read(position - (0xE000-0xC000))
             }
-            in 0xFE00..0xFE9F -> {
+            in 0xFE00 until 0xFE9F -> {
                 // OAM
                 return gpu.read(position)
             }
-            in 0xFEA0..0xFEFF -> {
+            in 0xFEA0 until 0xFEFF -> {
                 // not usabled
                 return 0
             }
@@ -89,7 +89,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                     }
                     0xFF07 -> {
                         // Timer frequency
-                        throw RuntimeException("trying to read timer frequency, you should go implement that")
+                        return timer.getTmc()
                     }
                     0xFF0F -> {
                         // IF register for pending interrupts
@@ -186,6 +186,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
             }
             in  0xE000..0xFDFF -> {
                 // Echo memory
+                return readSignedInternal(position - (0xE000-0xC000))
             }
             in 0xFE00..0xFE9F -> {
                 // OAM
@@ -295,7 +296,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                 internalRam[position - 0xC000] = value
             }
             in  0xE000..0xFDFF -> {
-                // Echo memory
+                return write(position - (0xE000-0xC000), value)
             }
             in 0xFE00..0xFE9F -> {
                 gpu.write(position, value)
@@ -308,12 +309,15 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                 // IO ports
                 when(position) {
                     0xFF01 -> {
+                        println("FF01: ${value.toChar()}")
                         // TODO: Implement serial
                         // no-op, serial
+                        TODO("Implement serial")
                     }
                     0xFF02 -> {
                         // TODO: Implement serial
                         // no-op, serial
+                        TODO("Implement serial")
                     }
                     0xFF04 -> {
                         // Divider register

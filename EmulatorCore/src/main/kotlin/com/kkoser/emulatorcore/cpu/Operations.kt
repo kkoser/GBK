@@ -500,7 +500,6 @@ fun Cpu.retFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
 }
 
 fun Cpu.call(location: Int) {
-    System.out.println("Calling from pc ${pc.toHexString()} to location ${location.toHexString()}")
     push(pc + 3)
     pc = location.toUnsigned16BitInt()
 }

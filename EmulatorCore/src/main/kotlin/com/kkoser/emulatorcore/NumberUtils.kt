@@ -21,6 +21,10 @@ fun Int.checkBit(bit: Int): Boolean {
     return ((1 shl bit) and this) > 0
 }
 
+fun Int.getBit(bit: Int): Int {
+    return ((1 shl bit) and this) shr (bit)
+}
+
 fun Int.toHexString(): String {
-    return Integer.toHexString(this)
+    return String.format("%02x", this)
 }

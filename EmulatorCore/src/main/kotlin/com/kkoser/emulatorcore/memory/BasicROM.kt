@@ -21,7 +21,7 @@ class BasicROM(val file: File) : CartridgeMemory {
 
     override fun read(position: Int): Int {
 //        if (position >= 0xA000) {
-//            return ram[position-0xA000-1].toUnsigned8BitInt()
+//            return ram[position-0xA000].toUnsigned8BitInt()
 //        }
         return memory[position].toUnsigned8BitInt()
     }

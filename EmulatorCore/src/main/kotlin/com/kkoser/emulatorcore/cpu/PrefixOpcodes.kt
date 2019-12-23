@@ -141,7 +141,7 @@ object PrefixOpcodes {
             0x79 to Operation(1, 4, "LD A,C", notImplemented),
             0x7A to Operation(1, 4, "LD A,D", notImplemented),
             0x7B to Operation(1, 4, "LD A,E", notImplemented),
-            0x7C to Operation(1, 4, "BIT 7, H", { cpu -> cpu.checkBit(Registers.Bit8.H, 7) }),
+            0x7C to Operation(2, 8, "BIT 7, H", { cpu -> cpu.checkBit(Registers.Bit8.H, 7) }),
             0x7D to Operation(1, 4, "LD A,L", notImplemented),
             0x7E to Operation(1, 8, "LD A,(HL)", notImplemented),
             0x7F to Operation(1, 4, "LD A,A", notImplemented),

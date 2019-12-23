@@ -43,21 +43,21 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
             throw RuntimeException("pc is out of memory memory range at ${pc.toHexString()}")
         }
 
-        if (ticks > 6000000) {
-            // print the first tile and quit
-            // print out the first tile
-            for (x in 0..7) {
-                for (y in 0..7) {
-                    val first = memory.read(0xFE00 + (x*y))
-                    val second = memory.read(0xFE00 + (x*y))
-
-                    System.out.print(first.toHexString() + " ; " + second.toHexString())
-                }
-                System.out.println()
-            }
-            throw RuntimeException("loaded tiles testing")
-            return 0
-        }
+//        if (ticks > 6000000) {
+//            // print the first tile and quit
+//            // print out the first tile
+//            for (x in 0..7) {
+//                for (y in 0..7) {
+//                    val first = memory.read(0xFE00 + (x*y))
+//                    val second = memory.read(0xFE00 + (x*y))
+//
+//                    System.out.print(first.toHexString() + " ; " + second.toHexString())
+//                }
+//                System.out.println()
+//            }
+//            throw RuntimeException("loaded tiles testing")
+//            return 0
+//        }
 
 
         var usePrefixOpcodes = false
@@ -82,8 +82,8 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
             throw IllegalArgumentException("Unsupported operation type: " + Integer.toHexString(memory.read(oldPc)))
         }
         if (ticks % 1 == 0) {
-            System.out.println("total ticks $ticks, cycles:$cycleCount")
-            printDebugState(operation)
+//            System.out.println("total ticks $ticks, cycles:$cycleCount")
+//            printDebugState(operation)
         }
 
         operation.operation(this)
@@ -91,7 +91,6 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         if (pc == 0x282a) {
             throw RuntimeException("filling vram?")
         }
-
         if (!operation.isJump) {
             pc += operation.numBytes
             return operation.cycles

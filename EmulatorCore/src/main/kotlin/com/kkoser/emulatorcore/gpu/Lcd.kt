@@ -32,7 +32,7 @@ class Lcd {
         Bit 1: OBJ (Sprite) Display Enable    (0=Off, 1=On)
         Bit 0: BG Display                     (0=Off, 1=On)
      */
-    var control = 128 // display defaults to on?
+    var control = 0 // display defaults to on?
 
     /** This is the big one - the LCD status regsiter. It's lower bits are read only,
      * but the higher ones are r/w so the game can enable specific lcd interrupts
@@ -45,7 +45,7 @@ class Lcd {
         Bit 2: Coincidence Flag  (0:LYC<>LY, 1:LYC=LY) (Read Only)
         Bit 1-0: Mode Flag       (Mode 0-3)            (Read Only)
      */
-    var status:Int = 5 // This is what it is usually set to with the nintendo boot rom, which we skip
+    var status:Int = 0 // This is what it is usually set to with the nintendo boot rom, which we skip
 
     // scrollX and Y range from  to 255 (0xFF)
     var scrollX = 0
@@ -64,15 +64,17 @@ class Lcd {
     var mode: Mode = Mode.OAM_SEARCH
         @TestOnly set
 
+    var modeListener: ((Mode) -> Unit)? = null
+
     private var currentModeCycles = 0
 
     // Used only for counting lines when in v-blank mode
     private var currentLineCycles = 0
 
     fun tick(cyclesTaken: Int, interruptHandler: InterruptHandler) {
-//        if (!enabled()) {
-//            return
-//        }
+        if (!enabled()) {
+            return
+        }
 
         // Now update the mode
         currentModeCycles += cyclesTaken
@@ -109,7 +111,6 @@ class Lcd {
                 setMode(Mode.V_BLANK, interruptHandler)
                 currentLineCycles = currentModeCycles
                 interruptHandler.interrupt(InterruptHandler.Interrupt.V_BLANK)
-                System.out.println("Starting V-BLANK interrupt")
             }
         }
 
@@ -147,6 +148,7 @@ class Lcd {
         }
 
         mode = newMode
+        modeListener?.invoke(newMode)
     }
 
     // The game cannot request to go to any scanline - writing any memory to 0xFF44 sets it to 0
@@ -154,7 +156,7 @@ class Lcd {
         currentScanLine = 0
     }
 
-    private fun enabled(): Boolean {
+    fun enabled(): Boolean {
         return control.checkBit(7)
     }
 }

@@ -56,7 +56,6 @@ fun Cpu.rlc(location: Registers.Bit8) {
  */
 fun Cpu.rl(location: Registers.Bit8) {
     val arg = registers.get(location).toUnsigned8BitInt()
-    println("Rotating ${arg.toHexString()} left 1 with carry ${checkFlag(Cpu.Flag.C)}")
     val bottomBit = if (checkFlag(Cpu.Flag.C)) 0x01 else 0x00
     val result = (arg shl 1).toUnsigned8BitInt() or bottomBit
     setFlag(Cpu.Flag.C, arg.checkBit(7))
@@ -64,7 +63,6 @@ fun Cpu.rl(location: Registers.Bit8) {
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.H, false)
 
-    println("Rotation result: ${Integer.toBinaryString(arg)} -> ${Integer.toBinaryString(result)}")
     registers.set(location, result)
 }
 
