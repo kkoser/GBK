@@ -5,7 +5,10 @@ import com.kkoser.emulatorcore.cpu.InterruptHandler
 import com.kkoser.emulatorcore.gpu.Dma
 import com.kkoser.emulatorcore.gpu.Gpu
 import com.kkoser.emulatorcore.gpu.Lcd
+import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toUnsigned8BitInt
+import java.util.logging.Level
+import java.util.logging.Logger
 
 /*
 Memory sections:
@@ -269,8 +272,12 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                 return interruptHandler.registerIE
                 // IME
             }
+            else -> {
+                Logger.getGlobal().log(Level.SEVERE, "Writing outside known memory at location ${position.toHexString()}, returning 0xFF")
+                return 0xFF
+            }
         }
-        return 0
+        return 0xFF
     }
 
     fun write(position: Int, value: Int) {
@@ -309,15 +316,16 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                 // IO ports
                 when(position) {
                     0xFF01 -> {
-                        println("FF01: ${value.toChar()}")
-                        // TODO: Implement serial
+                        print("${value.toChar()}")
+//                         TODO: Implement serial
                         // no-op, serial
-                        TODO("Implement serial")
+//                        TODO("Implement serial")
                     }
                     0xFF02 -> {
+//                        println("FF02: ${value.toChar()}")
                         // TODO: Implement serial
                         // no-op, serial
-                        TODO("Implement serial")
+//                        TODO("Implement serial")
                     }
                     0xFF04 -> {
                         // Divider register

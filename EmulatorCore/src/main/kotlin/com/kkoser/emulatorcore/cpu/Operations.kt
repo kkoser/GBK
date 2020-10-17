@@ -13,17 +13,20 @@ fun Cpu.noop() {
 
 // region Loads/Stores
 fun Cpu.loadImmediate8(register: Registers.Bit8) {
-    val value = memory.read(pc + 1)
+    val value = memory.read(pc + 1).toUnsigned8BitInt()
     // Ensuring we never accidentally insert bad values into the registers is important, because we use the
     // setters for the registers as a catch-all to also set some flags
     if (value > Registers.MAX_VALUE_8) throw RuntimeException("Read an immediate value thats not a valid immediate 8 bit value")
+//    if (pc > 0x100) println("Loading value ${value.toHexString()} into register ${register.name}")
     registers.set(register, value)
 }
 
 fun Cpu.loadImmediate16(register: Registers.Bit16) {
-    val higher = memory.read(pc + 2)
     val lower = memory.read(pc + 1)
-    registers.set(register, (higher shl 8) or lower)
+    val higher = memory.read(pc + 2)
+    val  value = ((higher shl 8) or lower).toUnsigned16BitInt()
+    if (value > Registers.MAX_VALUE_16) throw RuntimeException("Read an immediate value thats not a valid immediate 8 bit value")
+    registers.set(register, value)
 }
 
 /**
@@ -79,12 +82,12 @@ fun Cpu.loadRegisterIntoImmediateLocation(valueRegister: Registers.Bit8) {
     val lower = memory.read(pc + 1)
     val higher = memory.read(pc + 2)
     val location = ((higher shl 8) or lower).toUnsigned16BitInt()
-    memory.write(location, registers.get(valueRegister))
+    memory.write(location, registers.get(valueRegister).toUnsigned8BitInt())
 }
 
 fun Cpu.loadImmediateLocationIntoRegister(register: Registers.Bit8) {
-    val higher = memory.read(pc + 1)
-    val lower = memory.read(pc + 2)
+    val lower = memory.read(pc + 1)
+    val higher = memory.read(pc + 2)
     val location = ((higher shl 8) or lower).toUnsigned16BitInt()
     registers.set(register, memory.read(location))
 }
@@ -92,11 +95,15 @@ fun Cpu.loadImmediateLocationIntoRegister(register: Registers.Bit8) {
 val LDH_OFFSET = 0xFF00
 
 fun Cpu.ldhRegisterValueIntoImmediate() {
+    if (pc == 0xc6d6) println("Reading with offset ${memory.read(pc + 1)}")
     val location = memory.read(pc + 1) + LDH_OFFSET
-    memory.write(location, registers.get(Registers.Bit8.A))
+    val value = registers.get(Registers.Bit8.A)
+    memory.write(location, value)
 }
 
 fun Cpu.ldhImmediateMemoryLocationIntoRegister() {
+    if (pc == 0xc6d6) println("Reading with offset ${memory.read(pc + 1)}")
+
     val locationToReadFrom = memory.read(pc + 1).toUnsigned8BitInt() + LDH_OFFSET
     registers.set(Registers.Bit8.A, memory.read(locationToReadFrom))
 }
@@ -133,7 +140,8 @@ fun Cpu.increment8(location: Registers.Bit8) {
     setFlag(Cpu.Flag.N, false)
     var value = registers.get(location) + 1
     // Actually wrap around
-    value = if (value > Registers.MAX_VALUE_8) value % Registers.MAX_VALUE_8 else value
+//    value = if (value > Registers.MAX_VALUE_8) value % Registers.MAX_VALUE_8 else value
+    value = value.toUnsigned8BitInt()
 
     setFlag(Cpu.Flag.H, check8BitCarry(registers.get(location), 1))
     setFlag(Cpu.Flag.Z, value == 0)
@@ -142,27 +150,29 @@ fun Cpu.increment8(location: Registers.Bit8) {
 
 fun Cpu.decrement8(location: Registers.Bit8) {
     setFlag(Cpu.Flag.N, true)
-    var value = registers.get(location) - 1
+    val originalValue = registers.get(location)
+    var value = originalValue - 1
     // Actually wrap around
-    value = if (value > Registers.MAX_VALUE_8) value % Registers.MAX_VALUE_8 else value
+    value = value.toUnsigned8BitInt()
 
-    setFlag(Cpu.Flag.H, check8BitCarry(registers.get(location), -1))
+//    setFlag(Cpu.Flag.H, check8BitCarry(registers.get(location), -1))
+    setFlag(Cpu.Flag.H, (originalValue and 0x0F) == 0)
     setFlag(Cpu.Flag.Z, value == 0)
     registers.set(location, value)
 }
 
 // NOTE: 16-bit inc/dec don't modify any flags
 fun Cpu.increment16(location: Registers.Bit16) {
-    registers.set(location, registers.get(location) + 1)
+    registers.set(location, (registers.get(location) + 1).toUnsigned16BitInt())
 }
 
 fun Cpu.decrement16(location: Registers.Bit16) {
-    registers.set(location, registers.get(location) - 1)
+    registers.set(location, (registers.get(location) - 1).toUnsigned16BitInt())
 }
 
 fun Cpu.incrementMemory(location: Registers.Bit16) {
     val value = memory.read(registers.get(location))
-    val result = value + 1
+    val result = (value + 1).toUnsigned16BitInt()
     setFlag(Cpu.Flag.Z, result == 0)
     setFlag(Cpu.Flag.H, check8BitCarry(value, 1))
     setFlag(Cpu.Flag.N, false)
@@ -172,7 +182,7 @@ fun Cpu.incrementMemory(location: Registers.Bit16) {
 
 fun Cpu.decrementMemory(location: Registers.Bit16) {
     val value = memory.read(registers.get(location))
-    val result = value - 1
+    val result = (value - 1).toUnsigned16BitInt()
     setFlag(Cpu.Flag.Z, result == 0)
     setFlag(Cpu.Flag.H, check8BitCarry(value, -1))
     setFlag(Cpu.Flag.N, true)
@@ -220,10 +230,10 @@ fun Cpu.add8ImmediateToSp() {
 fun Cpu.adcValue(value: Int) {
     val arg1 = registers.get(Registers.Bit8.A)
     val carryVal = if (checkFlag(Cpu.Flag.C)) 1 else 0
-    val result = arg1 + value + carryVal
+    val result = (arg1 + value + carryVal).toUnsigned8BitInt()
 
     setFlag(Cpu.Flag.H, check8BitCarry(arg1, value))
-    setFlag(Cpu.Flag.C, arg1 + value > 0xffff)
+    setFlag(Cpu.Flag.C, arg1 + value + carryVal > 0xff)
 
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.Z, result == 0)
@@ -245,8 +255,8 @@ fun Cpu.adcImmediate() {
 
 fun Cpu.sub8Value(arg1: Int, arg2: Int, storeTo: Registers.Bit8) {
     val result = (arg1 - arg2).toUnsigned8BitInt()
-    setFlag(Cpu.Flag.H, check8BitCarry(arg1, arg2))
-    setFlag(Cpu.Flag.C, arg1 + arg2 > 0xffff)
+    setFlag(Cpu.Flag.H, check8BitCarry(arg2, arg1))
+    setFlag(Cpu.Flag.C, arg2 > arg1)
 
     setFlag(Cpu.Flag.N, true)
     setFlag(Cpu.Flag.Z, result == 0)
@@ -316,7 +326,7 @@ fun Cpu.andValue(value: Int) {
     setFlag(Cpu.Flag.H)
     setFlag(Cpu.Flag.C, false)
 
-    registers.set(Registers.Bit8.A, value)
+    registers.set(Registers.Bit8.A, result)
 }
 
 fun Cpu.and(x: Registers.Bit8) {
@@ -362,7 +372,7 @@ fun Cpu.orValue(value: Int) {
     setFlag(Cpu.Flag.H, false)
     setFlag(Cpu.Flag.C, false)
 
-    registers.set(Registers.Bit8.A, value)
+    registers.set(Registers.Bit8.A, result)
 }
 
 fun Cpu.or(x: Registers.Bit8) {
@@ -406,27 +416,75 @@ fun Cpu.complementA() {
 // Borrowed from https://github.com/kotcrab/xgbc/blob/master/src/main/kotlin/com/kotcrab/xgbc/cpu/OpCodesProcessor.kt
 // I'm not super sure what this one does
 fun Cpu.daa() {
-    var regA = registers.get(Registers.Bit8.A)
+    // based on https://forums.nesdev.com/viewtopic.php?t=15944
 
-    if (checkFlag(Cpu.Flag.N) == false) {
-        if (checkFlag(Cpu.Flag.H) || (regA and 0xF) > 9) regA += 0x06
-        if (checkFlag(Cpu.Flag.C) || regA > 0x9F) regA += 0x60
+    var a = registers.get(Registers.Bit8.A)
+    if (!checkFlag(Cpu.Flag.N)) {
+        if (checkFlag(Cpu.Flag.C) || a < 0x99) {
+            a += 0x60
+            setFlag(Cpu.Flag.C, true)
+        }
+        if (checkFlag(Cpu.Flag.H) || ((a and 0x0f) > 0x09)) {
+            a += 0x6
+        }
     } else {
-        if (checkFlag(Cpu.Flag.H)) regA = (regA - 6) and 0xFF
-        if (checkFlag(Cpu.Flag.C)) regA -= 0x60
+        if (checkFlag(Cpu.Flag.C)) {
+            a -= 0x60
+        }
+        if (checkFlag(Cpu.Flag.H)) {
+            a -= 0x6
+        }
     }
 
+    setFlag(Cpu.Flag.Z, a == 0)
     setFlag(Cpu.Flag.H, false)
-    setFlag(Cpu.Flag.Z, false)
-    if ((regA and 0x100) == 0x100) {
-        setFlag(Cpu.Flag.C)
-    }
 
-    regA = regA and 0xFF
+//    var regA = registers.get(Registers.Bit8.A)
+//
+//    if (checkFlag(Cpu.Flag.N) == false) {
+//        if (checkFlag(Cpu.Flag.H) || (regA and 0xF) > 9) regA += 0x06
+//        if (checkFlag(Cpu.Flag.C) || regA > 0x9F) regA += 0x60
+//    } else {
+//        if (checkFlag(Cpu.Flag.H)) regA = (regA - 6) and 0xFF
+//        if (checkFlag(Cpu.Flag.C)) regA -= 0x60
+//    }
+//
+//    setFlag(Cpu.Flag.H, false)
+//    setFlag(Cpu.Flag.Z, false)
+//    if ((regA and 0x100) == 0x100) {
+//        setFlag(Cpu.Flag.C)
+//    }
+//
+//    regA = regA and 0xFF
+//
+//    if (regA == 0) setFlag(Cpu.Flag.Z)
+//
+//    registers.set(Registers.Bit8.A, regA)
 
-    if (regA == 0) setFlag(Cpu.Flag.Z)
-
-    registers.set(Registers.Bit8.A, regA)
+//    var result: Int = registers.get(Registers.Bit8.A)
+//    if (checkFlag(Cpu.Flag.N)) {
+//        if (checkFlag(Cpu.Flag.H)) {
+//            result = result - 6 and 0xff
+//        }
+//        if (checkFlag(Cpu.Flag.C)) {
+//            result = result - 0x60 and 0xff
+//        }
+//    } else {
+//        if (checkFlag(Cpu.Flag.H) || result and 0xf > 9) {
+//            result += 0x06
+//        }
+//        if (checkFlag(Cpu.Flag.C) || result > 0x99) {
+//            result += 0x60
+//        }
+//    }
+//    setFlag(Cpu.Flag.H, false)
+//    if (result > 0xff) {
+//        setFlag(Cpu.Flag.C, true)
+//    }
+//    result = result and 0xff
+//    setFlag(Cpu.Flag.Z, result == 0)
+//
+//    registers.set(Registers.Bit8.A, result)
 }
 
 // endregion
@@ -525,6 +583,18 @@ fun Cpu.reset(location: Int) {
 
 fun Cpu.halt() {
     halted = true
+}
+
+fun Cpu.scf() {
+    setFlag(Cpu.Flag.C, true)
+    setFlag(Cpu.Flag.H, false)
+    setFlag(Cpu.Flag.N, false)
+}
+
+fun Cpu.ccf() {
+    setFlag(Cpu.Flag.C, !checkFlag(Cpu.Flag.C))
+    setFlag(Cpu.Flag.N, false)
+    setFlag(Cpu.Flag.H, false)
 }
 
 // endregion

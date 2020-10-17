@@ -33,6 +33,6 @@ class LcdDisplay : JPanel(), Renderer {
     }
 
     private fun colorForSprint(color: com.kkoser.emulatorcore.gpu.Color): Int {
-        return Color(abs(255 -color.red), abs(255 - color.blue), abs(255 - color.green)).rgb
+        return Color(abs(255 - color.red), abs(255 - color.blue), abs(255 - color.green)).rgb
     }
 }

@@ -7,7 +7,9 @@ import com.kkoser.emulatorcore.gpu.Gpu
 import com.kkoser.emulatorcore.gpu.Lcd
 import com.kkoser.emulatorcore.gpu.NoOpRenderer
 import com.kkoser.emulatorcore.memory.MemoryBus
+import com.kkoser.emulatorcore.toHexString
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -79,6 +81,15 @@ class CpuTests {
         ))
 
         assertEquals(0xCD, cpu.registers.get(Registers.Bit8.B))
+
+        runCpuWithInstructions(arrayOf(
+                0x06, 0xFF, // LD B
+                0x04 // inc B
+
+        ))
+
+        assertEquals(0x00, cpu.registers.get(Registers.Bit8.B))
+        assertTrue(cpu.checkFlag(Cpu.Flag.Z))
     }
 
     @Test
@@ -114,7 +125,47 @@ class CpuTests {
         assertEquals(0x5060, cpu.registers.get(Registers.Bit16.BC))
     }
 
+    @Test
+    fun pushAndPopDifferentRegisters() {
+        cpu.registers.set(Registers.Bit16.DE, 0x100)
+        cpu.pushRegister(Registers.Bit16.DE)
+
+        cpu.popInto(Registers.Bit16.AF)
+        assertEquals(0x100, cpu.registers.get(Registers.Bit16.AF))
+
+        cpu.registers.set(Registers.Bit16.DE, 0x90)
+        cpu.pushRegister(Registers.Bit16.DE)
+
+        cpu.popInto(Registers.Bit16.AF)
+        assertEquals(0x90, cpu.registers.get(Registers.Bit16.AF))
+    }
+
+    @Test
+    fun testCustomStackValue()  {
+        cpu.push(0x0099)
+        val temp = cpu.registers.get(Registers.Bit16.SP)
+        cpu.registers.set(Registers.Bit16.SP, 0xCFFF)
+        cpu.push(temp)
+        cpu.push(0x0555)
+
+        assertEquals(0x0555, cpu.popStack())
+        cpu.popInto(Registers.Bit16.SP)
+        assertEquals(0x0099, cpu.popStack())
+    }
+
+    @Test
+    fun incrementSpSigned() {
+        cpu.registers.set(Registers.Bit16.SP, 0xCFFF)
+        runCpuWithInstructions(arrayOf(
+                0xE8,
+                0xFF
+        ))
+
+        assertEquals(cpu.registers.get(Registers.Bit16.SP), 0xCFFE)
+    }
+
     private fun runCpuWithInstructions(instructions: Array<Int>) {
+        cpu.pc = 0
         testMemory.setROM(instructions)
         while(cpu.pc < instructions.size) {
             cpu.tick()

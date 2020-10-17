@@ -1,13 +1,8 @@
 package com.kkoser.emulatorcore.gpu
 
-import com.kkoser.emulatorcore.checkBit
 import com.kkoser.emulatorcore.getBit
-import com.kkoser.emulatorcore.toHexString
 import java.lang.RuntimeException
-import java.util.logging.Level
-import java.util.logging.Logger
 import kotlin.math.abs
-import kotlin.math.floor
 
 data class Color(val red: Int, val green: Int, val blue: Int) {
     companion object{
@@ -47,7 +42,7 @@ class NoOpRenderer : Renderer {
     }
 }
 
-class Gpu(val lcd: Lcd, val renderer: Renderer) {
+class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = null) {
 
     init {
         lcd.modeListener = {
@@ -144,16 +139,17 @@ class Gpu(val lcd: Lcd, val renderer: Renderer) {
             val higherDecodedColor = pallette.getBit(higherBitLocation)
             val colorId = (higherDecodedColor shl 1) or lowerDecodedColor
 
-
             return Color.getColorFromGbId(colorId, pallette)
         }
     }
 
     private fun lcdTransfer(line: Int) {
-        val yStart = line + lcd.scrollY
+        val scrollYTileShift = lcd.scrollY / 8
+
+        val yStart = (line + lcd.scrollY) % 255 // wrap around the window if needed
         val xStart = lcd.scrollX
 
-//        println("Starting lcd transfer for line with scrolly y $yStart x $xStart")
+//        println("Starting lcd transfer for line with scrolly y ${lcd.scrollY} -> $yStart x $xStart")
 
         // We get the whole map, but the actual screen is 160x144, or 20x18 tiles
         val backgroundMap = getBackgroundMap()
@@ -161,14 +157,20 @@ class Gpu(val lcd: Lcd, val renderer: Renderer) {
         // Determine the row of BG tiles that corresponds to the given line (keep in mind tiles are
         // all 8 lines tall)
         val tileNumber = yStart / 8
+//        println("Resolved to BG y location ${tileNumber.toHexString()}")
 
-        // Fetch the row from the BG map, there aree 18 tiles across the screen at a time
+        // Fetch the row from the BG map, there are 20 tiles across the screen at a time
         val tileArr = backgroundMap[tileNumber].copyOfRange(xStart, xStart + 20)
 
         // Iterate over the row and get all the tiles at this level
         val tileValues = tileArr.map { tileId ->
+            if (tileId != 0 && tileId != 20) {
+//                println()
+            }
             getTileFromId(tileId)
         }
+
+//        println("Drawing line with tileids: ${tileArr.joinToString(postfix = ";")}")
 
         // Determine which part of the tile we want to draw for the given line (tiles are 8px tall)
         val lineInTile = yStart % 8
@@ -182,6 +184,33 @@ class Gpu(val lcd: Lcd, val renderer: Renderer) {
 
         // request new line be shown on screen
         renderer.refresh()
+
+        // Only update the map on the first draw, as it draws the entire map independently of the current scan line
+        if (line == 0) {
+            renderDebugTiles()
+        }
+    }
+
+    fun renderDebugTiles() {
+        if (debugRenderer == null)
+            return
+
+        val allTiles = (0..255).map {
+            getTileFromId(it)
+        }.toTypedArray()
+
+        allTiles.withIndex().map {
+            // Get the number it is on this line, then multiple by 8 as each tile is 8 px wide
+            val xOffset = (it.index % 16) * 8
+            val yOffset = (it.index / 16) * 8
+            for (x in 0..7) {
+                for (y in 0..7) {
+                    debugRenderer.render(x + xOffset, y+ yOffset, it.value.getPixel(x, y, bgPallete))
+                }
+            }
+        }
+
+        debugRenderer.refresh()
     }
 
     private fun getTileFromId(id: Int): Tile {
@@ -191,9 +220,9 @@ class Gpu(val lcd: Lcd, val renderer: Renderer) {
         return Tile(id, vram.sliceArray(IntRange(offset, offset + 15)))
     }
 
-    // TODO: Support diffeerent map modes (bg vs window)
+    // TODO: Support different map modes (bg vs window)
     private fun getBackgroundMap(): Array<Array<Int>> {
-        // Subtract the start of VRAM since we aren't going through the memory for this
+        // Subtract the start of VRAM since we aren't going through the memorybus for this
         val BG_START = 0x9800 - 0x8000
         val BG_LENGTH = 32
 

@@ -2,14 +2,11 @@ package com.kkoser.emulatorcore.memory
 
 import com.kkoser.emulatorcore.toUnsigned8BitInt
 import java.io.File
+import java.io.InputStream
 import java.util.logging.Level
 import java.util.logging.Logger
 
-class BasicROM(val file: File) : CartridgeMemory {
-
-    private val x: ArrayList<String> = ArrayList()
-    val y: List<String> = x
-
+class BasicROM(val file: InputStream) : CartridgeMemory {
     private val memory: Array<Int>
     private val ram: Array<Int>
 
@@ -20,16 +17,16 @@ class BasicROM(val file: File) : CartridgeMemory {
     }
 
     override fun read(position: Int): Int {
-//        if (position >= 0xA000) {
-//            return ram[position-0xA000].toUnsigned8BitInt()
-//        }
+        if (position >= 0xA000) {
+            return ram[position-0xA000].toUnsigned8BitInt()
+        }
         return memory[position].toUnsigned8BitInt()
     }
 
     override fun readSigned(position: Int): Int {
-//        if (position >= 0xA000) {
-//            return ram[position-0xA000]
-//        }
+        if (position >= 0xA000) {
+            return ram[position-0xA000]
+        }
         return memory[position]
     }
 

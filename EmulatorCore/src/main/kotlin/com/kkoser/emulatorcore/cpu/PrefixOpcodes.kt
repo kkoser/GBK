@@ -8,278 +8,142 @@ object PrefixOpcodes {
     // Based on http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
     val invalid = Operation(0, 0, "BAD OPCODE", { cpu -> throw RuntimeException("BAD OPCODE") })
     val notImplemented: (Cpu)-> Unit =  { cpu -> println("cb unimpl ${cpu.pc.toHexString()}"); throw RuntimeException("BAD OPCODE") }
+    val registers8Bit = arrayOf(Registers.Bit8.B, Registers.Bit8.C, Registers.Bit8.D, Registers.Bit8.E, Registers.Bit8.H, Registers.Bit8.L)
 
-    val opCodes = mapOf(
-            0x00 to Operation(1, 4, "RLC B", notImplemented),
-            0x01 to Operation(3, 12, "RLC C", notImplemented),
-            0x02 to Operation(1, 8, "RLC D", notImplemented),
-            0x03 to Operation(1, 8, "RLC E", notImplemented),
-            0x04 to Operation(1, 4, "RLC H", notImplemented),
-            0x05 to Operation(1, 4, "RLC L", notImplemented),
-            0x06 to Operation(2, 8, "RLC (HL)", notImplemented),
-            0x07 to Operation(1, 4, "RLC A", notImplemented),
-            0x08 to Operation(3, 20, "LD (a16),SP", notImplemented),
-            0x09 to Operation(1, 8, "ADD HL,BC", notImplemented),
-            0x0A to Operation(1, 8, "LD A,(BC)", notImplemented),
-            0x0B to Operation(1, 8, "DEC BC", notImplemented),
-            0x0C to Operation(1, 4, "INC C", notImplemented),
-            0x0D to Operation(1, 4, "DEC C", notImplemented),
-            0x0E to Operation(2, 8, "LD C,d8", notImplemented),
-            0x0F to Operation(1, 4, "RRCA", notImplemented),
+    val opCodes = mutableMapOf<Int, Operation>(
 
-            0x10 to Operation(2, 4, "STOP 0", notImplemented),
-            0x11 to Operation(2, 8, "RL C", { cpu -> cpu.rl(Registers.Bit8.C)}),
-            0x12 to Operation(1, 8, "LD (DE),A", notImplemented),
-            0x13 to Operation(1, 8, "INC DE", notImplemented),
-            0x14 to Operation(1, 4, "INC D", notImplemented),
-            0x15 to Operation(1, 4, "DEC D", notImplemented),
-            0x16 to Operation(2, 8, "LD D,d8", notImplemented),
-            0x17 to Operation(1, 4, "RLA", notImplemented),
-            0x18 to Operation(2, 12, "JR r8", notImplemented, true),
-            0x19 to Operation(1, 8, "ADD HL,DE", notImplemented),
-            0x1A to Operation(1, 8, "LD A,(DE)", notImplemented),
-            0x1B to Operation(1, 8, "DEC DE", notImplemented),
-            0x1C to Operation(1, 4, "INC E", notImplemented),
-            0x1D to Operation(1, 4, "DEC E", notImplemented),
-            0x1E to Operation(2, 8, "LD E,d8", notImplemented),
-            0x1F to Operation(1, 4, "RRA", notImplemented),
+//            0x30 to Operation(2, 8, "SWAP B", { cpu-> cpu.swapImmediate(Registers.Bit8.B) }, true, 8),
+//            0x31 to Operation(2, 8, "SWAP C", { cpu-> cpu.swapImmediate(Registers.Bit8.C) }),
+//            0x32 to Operation(2, 8, "SWAP D", { cpu-> cpu.swapImmediate(Registers.Bit8.D) }),
+//            0x33 to Operation(2, 8, "SWAP E", { cpu-> cpu.swapImmediate(Registers.Bit8.E) }),
+//            0x34 to Operation(2, 8, "SWAP H", { cpu-> cpu.swapImmediate(Registers.Bit8.H) }),
+//            0x35 to Operation(2, 8, "SWAP L", { cpu-> cpu.swapImmediate(Registers.Bit8.L) }),
+//            0x36 to Operation(2, 16, "SWAP (HL)", { cpu-> cpu.swapIndirect(Registers.Bit16.HL) }),
+//            0x37 to Operation(2, 8, "SWAP A", { cpu-> cpu.swapImmediate(Registers.Bit8.A) }),
+//            0x38 to Operation(2, 12, "JR C,r8", notImplemented, true, 8),
+//            0x39 to Operation(1, 8, "ADD HL,SP", notImplemented),
+//            0x3A to Operation(1, 8, "LD A,(HL-)", notImplemented),
+//            0x3B to Operation(1, 8, "DEC SP", notImplemented),
+//            0x3C to Operation(1, 4, "INC A", notImplemented),
+//            0x3D to Operation(1, 4, "DEC A", notImplemented),
+//            0x3E to Operation(2, 8, "LD A,d8", notImplemented),
+//            0x3F to Operation(1, 4, "CCF", notImplemented),
+//
+//            0x40 to Operation(1, 4, "BIT 0,B", { cpu -> cpu.checkBit(Registers.Bit8.B, 0) }),
+//            0x41 to Operation(1, 4, "BIT 0,C", { cpu -> cpu.checkBit(Registers.Bit8.C, 0) }),
+//            0x42 to Operation(1, 4, "BIT 0,D", { cpu -> cpu.checkBit(Registers.Bit8.D, 0) }),
+//            0x43 to Operation(1, 4, "BIT 0,E", { cpu -> cpu.checkBit(Registers.Bit8.E, 0) }),
+//            0x44 to Operation(1, 4, "BIT 0,H", { cpu -> cpu.checkBit(Registers.Bit8.H, 0) }),
+//            0x45 to Operation(1, 4, "BIT 0,L", { cpu -> cpu.checkBit(Registers.Bit8.L, 0) }),
+//
+//            0x70 to Operation(1, 8, "LD (HL),B", notImplemented),
+//            0x71 to Operation(1, 8, "LD (HL),C", notImplemented),
+//            0x72 to Operation(1, 8, "LD (HL),D", notImplemented),
+//            0x73 to Operation(1, 8, "LD (HL),E", notImplemented),
+//            0x74 to Operation(1, 8, "LD (HL),H", notImplemented),
+//            0x75 to Operation(1, 8, "LD (HL),L", notImplemented),
+//            0x76 to Operation(1, 4, "HALT", notImplemented),
+//            0x77 to Operation(1, 8, "LD (HL),A", notImplemented),
+//            0x78 to Operation(1, 4, "LD A,B", notImplemented),
+//            0x79 to Operation(1, 4, "LD A,C", notImplemented),
+//            0x7A to Operation(1, 4, "LD A,D", notImplemented),
+//            0x7B to Operation(1, 4, "LD A,E", notImplemented),
+//            0x7C to Operation(2, 8, "BIT 7, H", { cpu -> cpu.checkBit(Registers.Bit8.H, 7) }),
+//            0x7D to Operation(1, 4, "LD A,L", notImplemented),
+//            0x7E to Operation(1, 8, "LD A,(HL)", notImplemented),
+//            0x7F to Operation(1, 4, "LD A,A", notImplemented)
 
-            0x20 to Operation(2, 12, "JR NZ,r8", notImplemented, true, 8),
-            0x21 to Operation(3, 12, "LD HL,d16", notImplemented),
-            0x22 to Operation(1, 8, "LD (HL+),A", notImplemented),
-            0x23 to Operation(1, 8, "INC HL", notImplemented),
-            0x24 to Operation(1, 4, "INC H", notImplemented),
-            0x25 to Operation(1, 4, "DEC H", notImplemented),
-            0x26 to Operation(2, 8, "LD H,d8", notImplemented),
-            0x27 to Operation(1, 4, "DAA", notImplemented),
-            0x28 to Operation(2, 12, "JR Z,r8", notImplemented, true, 8),
-            0x29 to Operation(1, 8, "ADD HL,HL", notImplemented),
-            0x2A to Operation(1, 8, "LD A,(HL+)", notImplemented),
-            0x2B to Operation(1, 8, "DEC HL", notImplemented),
-            0x2C to Operation(1, 4, "INC L", notImplemented),
-            0x2D to Operation(1, 4, "DEC L", notImplemented),
-            0x2E to Operation(2, 8, "LD L,d8", notImplemented),
-            0x2F to Operation(1, 4, "CPL", notImplemented),
+    ).apply {
+        // RLC
+        for ((index, register) in registers8Bit.withIndex()) {
+            set(index, Operation(2, 8, "RLC ${register.name}", { cpu -> cpu.rlc(register)}))
+        }
+        set(0x06, Operation(2, 16, "RLC (HL)", { cpu -> cpu.rlcIndirect(Registers.Bit16.HL)}))
+        set(0x07, Operation(2, 8, "RLC A", { cpu -> cpu.rlc(Registers.Bit8.A)}))
 
-            0x30 to Operation(2, 8, "SWAP B", { cpu-> cpu.swapImmediate(Registers.Bit8.B) }, true, 8),
-            0x31 to Operation(2, 8, "SWAP C", { cpu-> cpu.swapImmediate(Registers.Bit8.C) }),
-            0x32 to Operation(2, 8, "SWAP D", { cpu-> cpu.swapImmediate(Registers.Bit8.D) }),
-            0x33 to Operation(2, 8, "SWAP E", { cpu-> cpu.swapImmediate(Registers.Bit8.E) }),
-            0x34 to Operation(2, 8, "SWAP H", { cpu-> cpu.swapImmediate(Registers.Bit8.H) }),
-            0x35 to Operation(2, 8, "SWAP L", { cpu-> cpu.swapImmediate(Registers.Bit8.L) }),
-            0x36 to Operation(2, 16, "SWAP (HL)", { cpu-> cpu.swapIndirect(Registers.Bit16.HL) }),
-            0x37 to Operation(2, 8, "SWAP A", { cpu-> cpu.swapImmediate(Registers.Bit8.A) }),
-            0x38 to Operation(2, 12, "JR C,r8", notImplemented, true, 8),
-            0x39 to Operation(1, 8, "ADD HL,SP", notImplemented),
-            0x3A to Operation(1, 8, "LD A,(HL-)", notImplemented),
-            0x3B to Operation(1, 8, "DEC SP", notImplemented),
-            0x3C to Operation(1, 4, "INC A", notImplemented),
-            0x3D to Operation(1, 4, "DEC A", notImplemented),
-            0x3E to Operation(2, 8, "LD A,d8", notImplemented),
-            0x3F to Operation(1, 4, "CCF", notImplemented),
+        // RRC
+        for ((index, register) in registers8Bit.withIndex()) {
+            set(index + 0x08, Operation(2, 8, "RRC ${register.name}", { cpu -> cpu.rrc(register)}))
+        }
+        set(0xE, Operation(2, 16, "RRC (HL)", { cpu -> cpu.rrcIndirect(Registers.Bit16.HL)}))
+        set(0xF, Operation(2, 8, "RRC A", { cpu -> cpu.rrc(Registers.Bit8.A)}))
 
-            0x40 to Operation(1, 4, "BIT 0,B", { cpu -> cpu.checkBit(Registers.Bit8.B, 0) }),
-            0x41 to Operation(1, 4, "BIT 0,C", { cpu -> cpu.checkBit(Registers.Bit8.C, 0) }),
-            0x42 to Operation(1, 4, "BIT 0,D", { cpu -> cpu.checkBit(Registers.Bit8.D, 0) }),
-            0x43 to Operation(1, 4, "BIT 0,E", { cpu -> cpu.checkBit(Registers.Bit8.E, 0) }),
-            0x44 to Operation(1, 4, "BIT 0,H", { cpu -> cpu.checkBit(Registers.Bit8.H, 0) }),
-            0x45 to Operation(1, 4, "BIT 0,L", { cpu -> cpu.checkBit(Registers.Bit8.L, 0) }),
-            0x46 to Operation(1, 8, "LD B,(HL)", notImplemented),
-            0x47 to Operation(1, 4, "LD B,A", notImplemented),
-            0x48 to Operation(1, 4, "LD C,B", notImplemented),
-            0x49 to Operation(1, 4, "LD C,C", notImplemented),
-            0x4A to Operation(1, 4, "LD C,D", notImplemented),
-            0x4B to Operation(1, 4, "LD C,E", notImplemented),
-            0x4C to Operation(1, 4, "LD C,H", notImplemented),
-            0x4D to Operation(1, 4, "LD C,L", notImplemented),
-            0x4E to Operation(1, 8, "LD C,(HL)", notImplemented),
-            0x4F to Operation(1, 4, "LD C,A", notImplemented),
+        // RL
+        for ((index, register) in registers8Bit.withIndex()) {
+            set(index + 0x10, Operation(2, 8, "RL ${register.name}", { cpu -> cpu.rl(register)}))
+        }
+        set(0x16, Operation(2, 16, "RL (HL)", { cpu -> cpu.rlIndirect(Registers.Bit16.HL)}))
+        set(0x17, Operation(2, 8, "RL A", { cpu -> cpu.rl(Registers.Bit8.A)}))
 
-            0x50 to Operation(1, 4, "LD D,B", notImplemented),
-            0x51 to Operation(1, 4, "LD D,C", notImplemented),
-            0x52 to Operation(1, 4, "LD D,D", notImplemented),
-            0x53 to Operation(1, 4, "LD D,E", notImplemented),
-            0x54 to Operation(1, 4, "LD D,H", notImplemented),
-            0x55 to Operation(1, 4, "LD D,L", notImplemented),
-            0x56 to Operation(1, 8, "LD D,(HL)", notImplemented),
-            0x57 to Operation(1, 4, "LD D,A", notImplemented),
-            0x58 to Operation(1, 4, "LD E,B", notImplemented),
-            0x59 to Operation(1, 4, "LD E,C", notImplemented),
-            0x5A to Operation(1, 4, "LD E,D", notImplemented),
-            0x5B to Operation(1, 4, "LD E,E", notImplemented),
-            0x5C to Operation(1, 4, "LD E,H", notImplemented),
-            0x5D to Operation(1, 4, "LD E,L", notImplemented),
-            0x5E to Operation(1, 8, "LD E,(HL)", notImplemented),
-            0x5F to Operation(1, 4, "LD E,A", notImplemented),
+        // RR
+        for ((index, register) in registers8Bit.withIndex()) {
+            set(index + 0x18, Operation(2, 8, "RR ${register.name}", { cpu -> cpu.rr(register)}))
+        }
+        set(0x1E, Operation(2, 16, "RR (HL)", { cpu -> cpu.rrIndirect(Registers.Bit16.HL)}))
+        set(0x1F, Operation(2, 8, "RR A", { cpu -> cpu.rr(Registers.Bit8.A)}))
 
-            0x60 to Operation(1, 4, "LD H,B", notImplemented),
-            0x61 to Operation(1, 4, "LD H,C", notImplemented),
-            0x62 to Operation(1, 4, "LD H,D", notImplemented),
-            0x63 to Operation(1, 4, "LD H,E", notImplemented),
-            0x64 to Operation(1, 4, "LD H,H", notImplemented),
-            0x65 to Operation(1, 4, "LD H,L", notImplemented),
-            0x66 to Operation(1, 8, "LD H,(HL)", notImplemented),
-            0x67 to Operation(1, 4, "LD H,A", notImplemented),
-            0x68 to Operation(1, 4, "LD L,B", notImplemented),
-            0x69 to Operation(1, 4, "LD L,C", notImplemented),
-            0x6A to Operation(1, 4, "LD L,D", notImplemented),
-            0x6B to Operation(1, 4, "LD L,E", notImplemented),
-            0x6C to Operation(1, 4, "LD L,H", notImplemented),
-            0x6D to Operation(1, 4, "LD L,L", notImplemented),
-            0x6E to Operation(1, 8, "LD L,(HL)", notImplemented),
-            0x6F to Operation(1, 4, "LD L,A", notImplemented),
+        // SLA
+        for ((index, register) in registers8Bit.withIndex()) {
+            set(index + 0x20, Operation(2, 8, "SLA ${register.name}", { cpu -> cpu.sla(register)}))
+        }
+        set(0x26, Operation(2, 16, "SLA (HL)", { cpu -> cpu.slaIndirect(Registers.Bit16.HL)}))
+        set(0x27, Operation(2, 8, "SLA A", { cpu -> cpu.sla(Registers.Bit8.A)}))
 
-            0x70 to Operation(1, 8, "LD (HL),B", notImplemented),
-            0x71 to Operation(1, 8, "LD (HL),C", notImplemented),
-            0x72 to Operation(1, 8, "LD (HL),D", notImplemented),
-            0x73 to Operation(1, 8, "LD (HL),E", notImplemented),
-            0x74 to Operation(1, 8, "LD (HL),H", notImplemented),
-            0x75 to Operation(1, 8, "LD (HL),L", notImplemented),
-            0x76 to Operation(1, 4, "HALT", notImplemented),
-            0x77 to Operation(1, 8, "LD (HL),A", notImplemented),
-            0x78 to Operation(1, 4, "LD A,B", notImplemented),
-            0x79 to Operation(1, 4, "LD A,C", notImplemented),
-            0x7A to Operation(1, 4, "LD A,D", notImplemented),
-            0x7B to Operation(1, 4, "LD A,E", notImplemented),
-            0x7C to Operation(2, 8, "BIT 7, H", { cpu -> cpu.checkBit(Registers.Bit8.H, 7) }),
-            0x7D to Operation(1, 4, "LD A,L", notImplemented),
-            0x7E to Operation(1, 8, "LD A,(HL)", notImplemented),
-            0x7F to Operation(1, 4, "LD A,A", notImplemented),
+        // SRA
+        for ((index, register) in registers8Bit.withIndex()) {
+            set(index + 0x28, Operation(2, 8, "SRA ${register.name}", { cpu -> cpu.sra(register)}))
+        }
+        set(0x2E, Operation(2, 16, "SRA (HL)", { cpu -> cpu.sraIndirect(Registers.Bit16.HL)}))
+        set(0x2F, Operation(2, 8, "SRA A", { cpu -> cpu.sra(Registers.Bit8.A)}))
 
-            0x80 to Operation(1, 4, "ADD A,B", notImplemented),
-            0x81 to Operation(1, 4, "ADD A,C", notImplemented),
-            0x82 to Operation(1, 4, "ADD A,D", notImplemented),
-            0x83 to Operation(1, 4, "ADD A,E", notImplemented),
-            0x84 to Operation(1, 4, "ADD A,H", notImplemented),
-            0x85 to Operation(1, 4, "ADD A,L", notImplemented),
-            0x86 to Operation(1, 4, "ADD A,(HL)", notImplemented),
-            0x87 to Operation(1, 4, "ADD A,A", notImplemented),
-            0x88 to Operation(1, 4, "ADC A,B", notImplemented),
-            0x89 to Operation(1, 4, "ADC A,C", notImplemented),
-            0x8A to Operation(1, 4, "ADC A,D", notImplemented),
-            0x8B to Operation(1, 4, "ADC A,E", notImplemented),
-            0x8C to Operation(1, 4, "ADC A,H", notImplemented),
-            0x8D to Operation(1, 4, "ADC A,L", notImplemented),
-            0x8E to Operation(1, 4, "ADC A,B", notImplemented),
-            0x8F to Operation(1, 4, "ADC A,A", notImplemented),
+        // SWAP
+        for ((index, register) in registers8Bit.withIndex()) {
+            set(index + 0x30, Operation(2, 8, "SWAP ${register.name}", { cpu -> cpu.swap(register)}))
+        }
+        set(0x36, Operation(2, 16, "SWAP (HL)", { cpu -> cpu.swapIndirect(Registers.Bit16.HL)}))
+        set(0x37, Operation(2, 8, "SWAP A", { cpu -> cpu.swap(Registers.Bit8.A)}))
 
-            0x90 to Operation(1, 4, "SUB A,B", notImplemented),
-            0x91 to Operation(1, 4, "SUB A,C", notImplemented),
-            0x92 to Operation(1, 4, "SUB A,D", notImplemented),
-            0x93 to Operation(1, 4, "SUB A,E", notImplemented),
-            0x94 to Operation(1, 4, "SUB A,H", notImplemented),
-            0x95 to Operation(1, 4, "SUB A,L", notImplemented),
-            0x96 to Operation(1, 4, "SUB A,(HL)", notImplemented),
-            0x97 to Operation(1, 4, "SUB A,A", notImplemented),
-            0x98 to Operation(1, 4, "ADC A,B", notImplemented),
-            0x99 to Operation(1, 4, "ADC A,C", notImplemented),
-            0x9A to Operation(1, 4, "ADC A,D", notImplemented),
-            0x9B to Operation(1, 4, "ADC A,E", notImplemented),
-            0x9C to Operation(1, 4, "ADC A,H", notImplemented),
-            0x9D to Operation(1, 4, "ADC A,L", notImplemented),
-            0x9E to Operation(1, 4, "ADC A,B", notImplemented),
-            0x9F to Operation(1, 4, "ADC A,A", notImplemented),
+        // SRL
+        for ((index, register) in registers8Bit.withIndex()) {
+            set(index + 0x38, Operation(2, 8, "SRL ${register.name}", { cpu -> cpu.srl(register)}))
+        }
+        set(0x3E, Operation(2, 16, "SRL (HL)", { cpu -> cpu.srlIndirect(Registers.Bit16.HL)}))
+        set(0x3F, Operation(2, 8, "SRL A", { cpu -> cpu.srl(Registers.Bit8.A)}))
 
-            0xA0 to Operation(1, 4, "AND B", notImplemented),
-            0xA1 to Operation(1, 4, "AND C", notImplemented),
-            0xA2 to Operation(1, 4, "AND D", notImplemented),
-            0xA3 to Operation(1, 4, "AND E", notImplemented),
-            0xA4 to Operation(1, 4, "AND H", notImplemented),
-            0xA5 to Operation(1, 4, "AND L", notImplemented),
-            0xA6 to Operation(1, 4, "AND (HL)", notImplemented),
-            0xA7 to Operation(1, 4, "AND A", notImplemented),
-            0xA8 to Operation(1, 4, "XOR B", notImplemented),
-            0xA9 to Operation(1, 4, "XOR C", notImplemented),
-            0xAA to Operation(1, 4, "XOR D", notImplemented),
-            0xAB to Operation(1, 4, "XOR E", notImplemented),
-            0xAC to Operation(1, 4, "XOR H", notImplemented),
-            0xAD to Operation(1, 4, "XOR L", notImplemented),
-            0xAE to Operation(1, 4, "XOR (HL)", notImplemented),
-            0xAF to Operation(1, 4, "XOR A", notImplemented),
+        // BIT X, N
+        val bitNumbers = arrayOf(0,1,2,3,4,5,6,7)
+        val bitStartOffset = 0x40
 
-            0xB0 to Operation(1, 4, "OR B", notImplemented),
-            0xB1 to Operation(1, 4, "OR C", notImplemented),
-            0xB2 to Operation(1, 4, "OR D", notImplemented),
-            0xB3 to Operation(1, 4, "OR E", notImplemented),
-            0xB4 to Operation(1, 4, "OR H", notImplemented),
-            0xB5 to Operation(1, 4, "OR L", notImplemented),
-            0xB6 to Operation(1, 4, "OR (HL)", notImplemented),
-            0xB7 to Operation(1, 4, "OR A", notImplemented),
-            0xB8 to Operation(1, 4, "CP B", notImplemented),
-            0xB9 to Operation(1, 4, "CP C", notImplemented),
-            0xBA to Operation(1, 4, "CP D", notImplemented),
-            0xBB to Operation(1, 4, "CP E", notImplemented),
-            0xBC to Operation(1, 4, "CP H", notImplemented),
-            0xBD to Operation(1, 4, "CP L", notImplemented),
-            0xBE to Operation(1, 4, "CP (HL)", notImplemented),
-            0xBF to Operation(1, 4, "CP A", notImplemented),
+        for ((index, bitNumber) in bitNumbers.withIndex()) {
+            for ((regIndex, register) in registers8Bit.withIndex()) {
+                set(bitStartOffset + (bitNumbers.size * index) + regIndex, Operation(2, 8, "BIT $bitNumber ${register.name}", { cpu -> cpu.checkBit(register, bitNumber)}))
+            }
+            set(bitStartOffset + (bitNumbers.size * index) + registers8Bit.size, Operation(2, 16, "BIT $bitNumber, (HL)", { cpu -> cpu.checkBitIndirect(Registers.Bit16.HL, bitNumber)}))
+            set(bitStartOffset + (bitNumbers.size * index) + registers8Bit.size + 1, Operation(2, 8, "BIT $bitNumber, A", { cpu -> cpu.checkBit(Registers.Bit8.A, bitNumber)}))
+        }
 
-            0xC0 to Operation(1, 20, "RET NZ", notImplemented, true, 8),
-            0xC1 to Operation(1, 12, "POP BC", notImplemented),
-            0xC2 to Operation(3, 16, "JP NZ,a16", notImplemented, true, 12),
-            0xC3 to Operation(3, 16, "JP a16", notImplemented, true, 16),
-            0xC4 to Operation(3, 24, "CALL NZ,a16", notImplemented, true, 12),
-            0xC5 to Operation(1, 16, "PUSH BC", notImplemented),
-            0xC6 to Operation(2, 8, "ADD A,d8", notImplemented),
-            0xC7 to Operation(1, 16, "RST 00H", notImplemented),
-            0xC8 to Operation(1, 20, "RET Z", notImplemented, true, 8),
-            0xC9 to Operation(1, 16, "RET", notImplemented, true, 16),
-            0xCA to Operation(3, 16, "JP Z,a16", notImplemented, true, 12),
-            0xCB to Operation(1, 4, "PREFIX CB", notImplemented),
-            0xCC to Operation(3, 24, "CALL Z,a16", notImplemented, true, 12),
-            0xCD to Operation(3, 24, "CALL a16", notImplemented, true, 24),
-            0xCE to Operation(2, 8, "ADC A,d8", notImplemented),
-            0xCF to Operation(1, 16, "RST 08H", notImplemented, true, 16),
+        // RES X, N
+        val resStartOffset = 0x80
+        for ((index, bitNumber) in bitNumbers.withIndex()) {
+            for ((regIndex, register) in registers8Bit.withIndex()) {
+                set(resStartOffset + (bitNumbers.size * index) + regIndex, Operation(2, 8, "RES $bitNumber ${register.name}", { cpu -> cpu.resetBit(register, bitNumber)}))
+            }
+            set(resStartOffset + (bitNumbers.size * index) + registers8Bit.size, Operation(2, 16, "RES $bitNumber, (HL)", { cpu -> cpu.resetBitIndirect(Registers.Bit16.HL, bitNumber)}))
+            set(resStartOffset + (bitNumbers.size * index) + registers8Bit.size + 1, Operation(2, 8, "RES $bitNumber, A", { cpu -> cpu.resetBit(Registers.Bit8.A, bitNumber)}))
+        }
 
-            0xD0 to Operation(1, 20, "RET NC", notImplemented, true, 8),
-            0xD1 to Operation(1, 12, "POP DE", notImplemented),
-            0xD2 to Operation(3, 16, "JP NC,a16", notImplemented, true, 12),
-            0xD3 to invalid,
-            0xD4 to Operation(3, 24, "CALL NC,a16", notImplemented, true, 12),
-            0xD5 to Operation(1, 16, "PUSH DE", notImplemented),
-            0xD6 to Operation(2, 8, "SUB d8", notImplemented),
-            0xD7 to Operation(1, 16, "RST 10H", notImplemented, true, 16),
-            0xD8 to Operation(1, 20, "RET C", notImplemented, true, 8),
-            0xD9 to Operation(1, 16, "RETI", notImplemented, true, 16),
-            0xDA to Operation(3, 16, "JP C,a16", notImplemented, true, 12),
-            0xDB to invalid,
-            0xDC to Operation(3, 24, "CALL C,a16", notImplemented, true, 12),
-            0xDD to invalid,
-            0xDE to Operation(2, 8, "SBC A,d8", notImplemented),
-            0xDF to Operation(1, 16, "RST 18H", notImplemented, true, 16),
+        // SET X, N
+        val setStartOffset = 0xC0
+        for ((index, bitNumber) in bitNumbers.withIndex()) {
+            for ((regIndex, register) in registers8Bit.withIndex()) {
+                set(setStartOffset + (bitNumbers.size * index) + regIndex, Operation(2, 8, "SET $bitNumber ${register.name}", { cpu -> cpu.setBit(register, bitNumber)}))
+            }
+            set(setStartOffset + (bitNumbers.size * index) + registers8Bit.size, Operation(2, 16, "SET $bitNumber, (HL)", { cpu -> cpu.setBitIndirect(Registers.Bit16.HL, bitNumber)}))
+            set(setStartOffset + (bitNumbers.size * index) + registers8Bit.size + 1, Operation(2, 8, "SET $bitNumber, A", { cpu -> cpu.setBit(Registers.Bit8.A, bitNumber)}))
+        }
 
-            0xE0 to Operation(2, 12, "LDH (a8),A", notImplemented),
-            0xE1 to Operation(1, 12, "POP HL", notImplemented),
-            0xE2 to Operation(1, 8, "LD (C),A", notImplemented),
-            0xE3 to invalid,
-            0xE4 to invalid,
-            0xE5 to Operation(1, 16, "PUSH HL", notImplemented),
-            0xE6 to Operation(2, 8, "AND d8", notImplemented),
-            0xE7 to Operation(1, 16, "RST 20H", notImplemented, true, 16),
-            0xE8 to Operation(2, 16, "ADD SP,r8", notImplemented),
-            0xE9 to Operation(1, 4, "JP (HL)", notImplemented),
-            0xEA to Operation(3, 16, "LD (a16),A", notImplemented),
-            0xEB to invalid,
-            0xEC to invalid,
-            0xED to invalid,
-            0xEE to Operation(2, 8, "XOR d8", notImplemented),
-            0xEF to Operation(1, 16, "RST 28H", notImplemented, true, 16),
 
-            0xF0 to Operation(2, 12, "LDH A,(a8)", notImplemented),
-            0xF1 to Operation(1, 12, "POP HL", notImplemented),
-            0xF2 to Operation(1, 8, "LD A,(C)", notImplemented),
-            0xF3 to Operation(1, 4, "DI", notImplemented),
-            0xF4 to invalid,
-            0xF5 to Operation(1, 16, "PUSH AF", notImplemented),
-            0xF6 to Operation(2, 8, "OR d8", notImplemented),
-            0xF7 to Operation(1, 16, "RST 30H", notImplemented, true, 16),
-            0xF8 to Operation(2, 12, "LD HL,SP+r8", notImplemented),
-            0xF9 to Operation(1, 8, "LD SP,HL", notImplemented),
-            0xFA to Operation(3, 16, "LD A,(a16)", notImplemented),
-            0xFB to Operation(1, 4, "EI", notImplemented),
-            0xFC to invalid,
-            0xFD to invalid,
-            0xFE to Operation(2, 8, "CP d8", notImplemented),
-            0xFF to Operation(1, 16, "RST 38H", notImplemented, true, 16)
-    )
+
+        assert(keys.size == 0xFF)
+    }
 }

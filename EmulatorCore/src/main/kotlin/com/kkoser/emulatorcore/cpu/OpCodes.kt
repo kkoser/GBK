@@ -1,7 +1,6 @@
 package com.kkoser.emulatorcore.cpu
 
-import java.util.logging.Level
-import java.util.logging.Logger
+import com.kkoser.emulatorcore.toHexString
 
 /**
  * An Operation can make changes to the Cpu
@@ -21,7 +20,7 @@ object OpCodes {
     // This could (probably should) be converted to an intArray in the future for better performance. I did it this way
     // During development to make it easier to read what maps to what
     // Based on http://www.pastraiser.com/cpu/gameboy/gameboy_opcodes.html
-    val invalid = Operation(0, 0, "BAD OPCODE", { cpu -> throw RuntimeException("BAD OPCODE") })
+    val invalid = Operation(0, 0, "BAD OPCODE", { cpu -> throw RuntimeException("BAD OPCODE ${cpu.memory.read(cpu.pc).toHexString()}") })
 
     val opCodes = mapOf(
             0x00 to Operation(1, 4, "NOP", Cpu::noop),
@@ -31,7 +30,7 @@ object OpCodes {
             0x04 to Operation(1, 4, "INC B", { cpu -> cpu.increment8(Registers.Bit8.B) }),
             0x05 to Operation(1, 4, "DEC B", { cpu -> cpu.decrement8(Registers.Bit8.B) }),
             0x06 to Operation(2, 8, "LD B,d8", { cpu -> cpu.loadImmediate8(Registers.Bit8.B) }),
-            0x07 to Operation(1, 4, "RLCA", { cpu -> cpu.rlc(Registers.Bit8.A) }),
+            0x07 to Operation(1, 4, "RLCA", { cpu -> cpu.rlc(Registers.Bit8.A, true) }),
             0x08 to Operation(3, 20, "LD (a16),SP", { cpu -> cpu.storeIntoImmediateMemoryLocation(Registers.Bit16.SP) }),
             0x09 to Operation(1, 8, "ADD HL,BC", { cpu -> cpu.add16(Registers.Bit16.HL, Registers.Bit16.BC) }),
             0x0A to Operation(1, 8, "LD A,(BC)", { cpu -> cpu.loadIndirectValueIntoRegister(Registers.Bit8.A, Registers.Bit16.BC) }),
@@ -39,16 +38,16 @@ object OpCodes {
             0x0C to Operation(1, 4, "INC C", { cpu -> cpu.increment8(Registers.Bit8.C) }),
             0x0D to Operation(1, 4, "DEC C", { cpu -> cpu.decrement8(Registers.Bit8.C) }),
             0x0E to Operation(2, 8, "LD C,d8", { cpu -> cpu.loadImmediate8(Registers.Bit8.C) }),
-            0x0F to Operation(1, 4, "RRCA", { cpu -> cpu.rrc(Registers.Bit8.A) }),
+            0x0F to Operation(1, 4, "RRCA", { cpu -> cpu.rrc(Registers.Bit8.A, true) }),
 
-            0x10 to Operation(2, 4, "STOP 0", { cpu -> throw RuntimeException("STOP Command! Idk what to do here") }),
+            0x10 to Operation(2, 4, "STOP 0", { cpu -> cpu.halted = true }),
             0x11 to Operation(3, 12, "LD DE,d16", { cpu -> cpu.loadImmediate16(Registers.Bit16.DE) }),
             0x12 to Operation(1, 8, "LD (DE),A", { cpu -> cpu.loadRegisterIntoIndirectLocation(Registers.Bit16.DE, Registers.Bit8.A) }),
             0x13 to Operation(1, 8, "INC DE", { cpu -> cpu.increment16(Registers.Bit16.DE) }),
             0x14 to Operation(1, 4, "INC D", { cpu -> cpu.increment8(Registers.Bit8.D) }),
             0x15 to Operation(1, 4, "DEC D", { cpu -> cpu.decrement8(Registers.Bit8.D) }),
             0x16 to Operation(2, 8, "LD D,d8", { cpu -> cpu.loadImmediate8(Registers.Bit8.D) }),
-            0x17 to Operation(1, 4, "RLA", { cpu -> cpu.rl(Registers.Bit8.A) }),
+            0x17 to Operation(1, 4, "RLA", { cpu -> cpu.rl(Registers.Bit8.A, true) }),
             0x18 to Operation(2, 12, "JR r8", { cpu -> cpu.jumpRelative() }, true),
             0x19 to Operation(1, 8, "ADD HL,DE", { cpu -> cpu.add16(Registers.Bit16.HL, Registers.Bit16.DE) }),
             0x1A to Operation(1, 8, "LD A,(DE)", { cpu -> cpu.loadIndirectValueIntoRegister(Registers.Bit8.A, Registers.Bit16.DE) }),
@@ -56,7 +55,7 @@ object OpCodes {
             0x1C to Operation(1, 4, "INC E", { cpu -> cpu.increment8(Registers.Bit8.E) }),
             0x1D to Operation(1, 4, "DEC E", { cpu -> cpu.decrement8(Registers.Bit8.E) }),
             0x1E to Operation(2, 8, "LD E,d8", { cpu -> cpu.loadImmediate8(Registers.Bit8.E) }),
-            0x1F to Operation(1, 4, "RRA", { cpu -> cpu.rr(Registers.Bit8.A) }),
+            0x1F to Operation(1, 4, "RRA", { cpu -> cpu.rr(Registers.Bit8.A, true) }),
 
             0x20 to Operation(2, 12, "JR NZ,r8", { cpu -> cpu.jumpRelativeFlag(Cpu.Flag.Z, false) }, true, 8),
             0x21 to Operation(3, 12, "LD HL,d16", { cpu -> cpu.loadImmediate16(Registers.Bit16.HL) }),
@@ -82,7 +81,7 @@ object OpCodes {
             0x34 to Operation(1, 12, "INC (HL)", { cpu -> cpu.incrementMemory(Registers.Bit16.HL) }),
             0x35 to Operation(1, 12, "DEC (HL)", { cpu -> cpu.decrementMemory(Registers.Bit16.HL) }),
             0x36 to Operation(2, 12, "LD (HL),d8", { cpu -> cpu.storeImmediateIntoIndirectMemoryLocation(Registers.Bit16.HL) }),
-            0x37 to Operation(1, 4, "SCF", { cpu -> cpu.setFlag(Cpu.Flag.C, true) }),
+            0x37 to Operation(1, 4, "SCF", { cpu -> cpu.scf() }),
             0x38 to Operation(2, 12, "JR C,r8", { cpu -> cpu.jumpRelativeFlag(Cpu.Flag.C, true) }, true, 8),
             0x39 to Operation(1, 8, "ADD HL,SP", { cpu -> cpu.add16(Registers.Bit16.HL, Registers.Bit16.SP) }),
             0x3A to Operation(1, 8, "LD A,(HL-)", { cpu -> cpu.loadIndirectValueIntoRegisterAndDecrement(Registers.Bit8.A, Registers.Bit16.HL) }),
@@ -90,7 +89,7 @@ object OpCodes {
             0x3C to Operation(1, 4, "INC A", { cpu -> cpu.increment8(Registers.Bit8.A) }),
             0x3D to Operation(1, 4, "DEC A", { cpu -> cpu.decrement8(Registers.Bit8.A) }),
             0x3E to Operation(2, 8, "LD A,d8", { cpu -> cpu.loadImmediate8(Registers.Bit8.A) }),
-            0x3F to Operation(1, 4, "CCF", { cpu -> cpu.setFlag(Cpu.Flag.C, false) }),
+            0x3F to Operation(1, 4, "CCF", { cpu -> cpu.ccf() }),
 
             0x40 to Operation(1, 4, "LD B,B", { cpu -> cpu.loadRegisterIntoRegister(Registers.Bit8.B, Registers.Bit8.B) }),
             0x41 to Operation(1, 4, "LD B,C", { cpu -> cpu.loadRegisterIntoRegister(Registers.Bit8.B, Registers.Bit8.C) }),
@@ -272,7 +271,7 @@ object OpCodes {
             0xE6 to Operation(2, 8, "AND d8", { cpu -> cpu.andImmediate() }),
             0xE7 to Operation(1, 16, "RST 20H", { cpu -> cpu.reset(0x20) }, true, 16),
             0xE8 to Operation(2, 16, "ADD SP,r8", { cpu -> cpu.add8ImmediateToSp() }),
-            0xE9 to Operation(1, 4, "JP (HL)", { cpu -> cpu.jumpRegister(Registers.Bit16.HL) }),
+            0xE9 to Operation(1, 4, "JP (HL)", { cpu -> cpu.jumpRegister(Registers.Bit16.HL) }, true, 4),
             0xEA to Operation(3, 16, "LD (a16),A", { cpu -> cpu.loadRegisterIntoImmediateLocation(Registers.Bit8.A) }),
             0xEB to invalid,
             0xEC to invalid,
@@ -281,7 +280,7 @@ object OpCodes {
             0xEF to Operation(1, 16, "RST 28H", { cpu -> cpu.reset(0x28) }, true, 16),
 
             0xF0 to Operation(2, 12, "LDH A,(a8)", { cpu -> cpu.ldhImmediateMemoryLocationIntoRegister() }),
-            0xF1 to Operation(1, 12, "POP HL", { cpu -> cpu.popInto(Registers.Bit16.HL) }),
+            0xF1 to Operation(1, 12, "POP AF", { cpu -> cpu.popInto(Registers.Bit16.AF) }),
             0xF2 to Operation(1, 8, "LD A,(C)", { cpu -> cpu.loadIndirectRegisterValueIntoRegisterA(Registers.Bit8.C) }),
             0xF3 to Operation(1, 4, "DI", { cpu -> cpu.ime = false }),
             0xF4 to invalid,

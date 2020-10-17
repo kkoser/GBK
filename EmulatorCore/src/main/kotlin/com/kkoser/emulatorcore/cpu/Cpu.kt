@@ -34,31 +34,14 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
      * number of cycles
      */
     fun tick(): Int {
+        if (halted) {
+            return 0
+        }
         ticks++
-//        if (pc > 0x7FFF) {
-//            throw RuntimeException("pc is out of RAM memory range at ${pc.toHexString()}, probably shouldn't be here")
-//        }
 
         if (pc > 0xFFFF) {
             throw RuntimeException("pc is out of memory memory range at ${pc.toHexString()}")
         }
-
-//        if (ticks > 6000000) {
-//            // print the first tile and quit
-//            // print out the first tile
-//            for (x in 0..7) {
-//                for (y in 0..7) {
-//                    val first = memory.read(0xFE00 + (x*y))
-//                    val second = memory.read(0xFE00 + (x*y))
-//
-//                    System.out.print(first.toHexString() + " ; " + second.toHexString())
-//                }
-//                System.out.println()
-//            }
-//            throw RuntimeException("loaded tiles testing")
-//            return 0
-//        }
-
 
         var usePrefixOpcodes = false
         val oldPc = pc
@@ -83,14 +66,16 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         }
         if (ticks % 1 == 0) {
 //            System.out.println("total ticks $ticks, cycles:$cycleCount")
-//            printDebugState(operation)
+            if (pc >= 0x100) {
+                printDebugState(operation)
+            }
         }
 
         operation.operation(this)
 
-        if (pc == 0x282a) {
-            throw RuntimeException("filling vram?")
-        }
+//        if (pc == 0x282a) {
+//            throw RuntimeException("filling vram?")
+//        }
         if (!operation.isJump) {
             pc += operation.numBytes
             return operation.cycles
@@ -124,7 +109,7 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
     fun printDebugState(operation: Operation) {
         if (!debug)
             return
-        System.out.println("A: ${Integer.toHexString(registers.get(Registers.Bit8.A))}; F: ${describeFlags()}; BC:${Integer.toHexString(registers.get(Registers.Bit16.BC))}; DE:${Integer.toHexString(registers.get(Registers.Bit16.DE))}; HL:${Integer.toHexString(registers.get(Registers.Bit16.HL))}; SP:${Integer.toHexString(registers.get(Registers.Bit16.SP))}  TST:${Integer.toHexString(checkStack())}   pc:${Integer.toHexString(pc)}, operation:${operation.title}")
+        System.out.println("AF=${registers.get(Registers.Bit16.AF).toHexString()}, BC=${registers.get(Registers.Bit16.BC).toHexString()}, DE=${registers.get(Registers.Bit16.DE).toHexString()}, HL=${registers.get(Registers.Bit16.HL).toHexString()}, SP=${registers.get(Registers.Bit16.SP).toHexString()}, PC=${pc.toHexString()}, ${describeFlags()}----, ${operation.title}")
     }
 
     fun checkStack(): Int {

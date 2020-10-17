@@ -37,16 +37,34 @@ object SwingMain {
             mainWindow.isResizable = false
             mainWindow.isVisible = true
             mainWindow.setSize(160 * 2 + 10, 144 * 2 + 50)
+
+            val vramWindow = JFrame("VRAM")
+            vramWindow.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+            val debugDisplay = LcdDisplay()
+            debugDisplay.setSize(256, 256)
+            vramWindow.contentPane = debugDisplay
+            vramWindow.isVisible = true
+            vramWindow.setSize(256, 256)
+
             Thread {
-                //                new Emulator(display).run();
 
-                val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
-//                val gameFile = File("/Users/kkoser/Downloads/01-special.gb")
+//                val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
+//                val gameFile = File("/Users/kkoser/Downloads/Dr. Mario (World).gb") //FAIL (repeatedly on DAA)
+//                val gameFile = File("/Users/kkoser/Downloads/01-special.gb") //FAIL (repeatedly on DAA)
+//                val gameFile = File("/Users/kkoser/Downloads/06-ld r,r.gb") // PASS
+//                val gameFile = File("/Users/kkoser/Downloads/10-bit ops.gb") // FF FAIL
+//                val gameFile = File("/Users/kkoser/Downloads/11-op a,(hl).gb") // FAIL
+//                val gameFile = File("/Users/kkoser/Downloads/09-op r,r.gb") // FAIL
+//                val gameFile = File("/Users/kkoser/Downloads/08-misc instrs.gb") // FAIL in loop, does not start
+//                val gameFile = File("/Users/kkoser/Downloads/07-jr,jp,call,ret,rst.gb") // FAIL, does not finish
+//                val gameFile = File("/Users/kkoser/Downloads/05-op rp.gb") // PASS
+//                val gameFile = File("/Users/kkoser/Downloads/04-op r,imm.gb") // FAIL
+                val gameFile = File("/Users/kkoser/Downloads/03-op sp,hl.gb") // LOOP, does not finish
 
-                val rom = BasicROM(gameFile)
+                val rom = BasicROM(gameFile.inputStream())
                 val timer = Timer()
                 val lcd = Lcd()
-                val gpu = Gpu(lcd, display)
+                val gpu = Gpu(lcd, display, debugDisplay)
                 val dma = Dma()
                 val interruptHandler = DefaultInterruptHandler()
                 val memoryBus = MemoryBus(rom, timer, interruptHandler, lcd, dma, gpu)
