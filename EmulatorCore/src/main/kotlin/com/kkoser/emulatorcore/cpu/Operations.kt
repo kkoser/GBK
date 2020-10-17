@@ -231,7 +231,7 @@ fun Cpu.adcValue(value: Int) {
     val carryVal = if (checkFlag(Cpu.Flag.C)) 1 else 0
     val result = (arg1 + value + carryVal).toUnsigned8BitInt()
 
-    setFlag(Cpu.Flag.H, check8BitCarry(arg1, value))
+    setFlag(Cpu.Flag.H, ((arg1 and 0x0F) + (value and 0x0F) + carryVal) > 0xF)
     setFlag(Cpu.Flag.C, arg1 + value + carryVal > 0xff)
 
     setFlag(Cpu.Flag.N, false)
