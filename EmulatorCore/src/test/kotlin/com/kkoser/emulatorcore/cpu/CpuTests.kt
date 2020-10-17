@@ -164,6 +164,22 @@ class CpuTests {
         assertEquals(cpu.registers.get(Registers.Bit16.SP), 0xCFFE)
     }
 
+    @Test
+    fun loadImmediate8Loop() {
+        val values = arrayOf(0x00,0x01,0x0F,0x10,0x1F,0x7F,0x80,0xF0,0xFF)
+
+        val regs = enumValues<Registers.Bit8>().filter { it != Registers.Bit8.F && it != Registers.Bit8.UNUSED }
+        for (reg in regs) {
+            for (value in values) {
+                cpu.memory.write(cpu.pc + 1, value)
+                cpu.loadImmediate8(reg)
+
+                println(reg)
+                assertEquals("$reg", cpu.registers.get(reg), value)
+            }
+        }
+    }
+
     private fun runCpuWithInstructions(instructions: Array<Int>) {
         cpu.pc = 0
         testMemory.setROM(instructions)

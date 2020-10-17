@@ -67,7 +67,7 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         if (ticks % 1 == 0) {
 //            System.out.println("total ticks $ticks, cycles:$cycleCount")
             if (pc >= 0x100) {
-                printDebugState(operation)
+//                printDebugState(operation)
             }
         }
 

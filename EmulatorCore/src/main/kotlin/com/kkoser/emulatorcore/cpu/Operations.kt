@@ -1,6 +1,5 @@
 package com.kkoser.emulatorcore.cpu
 
-import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithLowerInt
 import com.kkoser.emulatorcore.toUnsigned16BitInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
@@ -156,7 +155,7 @@ fun Cpu.decrement8(location: Registers.Bit8) {
     value = value.toUnsigned8BitInt()
 
 //    setFlag(Cpu.Flag.H, check8BitCarry(registers.get(location), -1))
-    setFlag(Cpu.Flag.H, (originalValue and 0x0F) == 0)
+    setFlag(Cpu.Flag.H, check8BitCarrySubtraction(originalValue, -1))
     setFlag(Cpu.Flag.Z, value == 0)
     registers.set(location, value)
 }
@@ -184,7 +183,7 @@ fun Cpu.decrementMemory(location: Registers.Bit16) {
     val value = memory.read(registers.get(location))
     val result = (value - 1).toUnsigned16BitInt()
     setFlag(Cpu.Flag.Z, result == 0)
-    setFlag(Cpu.Flag.H, check8BitCarry(value, -1))
+    setFlag(Cpu.Flag.H, check8BitCarrySubtraction(value, -1))
     setFlag(Cpu.Flag.N, true)
 
     memory.write(registers.get(location), result)
@@ -255,8 +254,8 @@ fun Cpu.adcImmediate() {
 
 fun Cpu.sub8Value(arg1: Int, arg2: Int, storeTo: Registers.Bit8) {
     val result = (arg1 - arg2).toUnsigned8BitInt()
-    setFlag(Cpu.Flag.H, check8BitCarry(arg2, arg1))
-    setFlag(Cpu.Flag.C, arg2 > arg1)
+    setFlag(Cpu.Flag.H, check8BitCarrySubtraction(arg1, arg2))
+    setFlag(Cpu.Flag.C, arg1 < arg2)
 
     setFlag(Cpu.Flag.N, true)
     setFlag(Cpu.Flag.Z, result == 0)
@@ -281,7 +280,7 @@ fun Cpu.sbcValue(value: Int) {
     val carryVal = if (checkFlag(Cpu.Flag.C)) 1 else 0
     val result = arg1 - value - carryVal
 
-    setFlag(Cpu.Flag.H, check8BitCarry(arg1, value))
+    setFlag(Cpu.Flag.H, check8BitCarrySubtraction(arg1, value))
     setFlag(Cpu.Flag.C, arg1 - value < 0)
 
     setFlag(Cpu.Flag.N, true)
@@ -602,4 +601,8 @@ fun Cpu.ccf() {
 // Shoutout to https://robdor.com/2016/08/10/gameboy-emulator-half-carry-flag/ for a great explanation of this algorithm
 fun check8BitCarry(a: Int, b: Int): Boolean {
     return (((a and 0xf) + (b and 0xf)) and 0x10) == 0x10
+}
+
+fun check8BitCarrySubtraction(a: Int, b: Int): Boolean {
+    return ((a and 0xF) - (b and 0xF) < 0)
 }
