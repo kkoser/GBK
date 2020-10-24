@@ -10,7 +10,7 @@ fun Int.toIntWithLowerInt(lowerInt: Int): Int {
 }
 
 fun Int.toIntWithHighNibble(highNibble: Int): Int {
-    return (this and (highNibble.toUnsigned8BitInt() shl 4)).toUnsigned8BitInt()
+    return (this or ((highNibble shl 4) and 0xf0)).toUnsigned8BitInt()
 }
 
 fun Int.getLow8Bits(): Int {
