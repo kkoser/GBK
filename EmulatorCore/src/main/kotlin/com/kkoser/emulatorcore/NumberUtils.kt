@@ -27,7 +27,7 @@ fun Int.getLowNibble(): Int {
 
 fun Int.getHighNibble(): Int {
     // We need to shift the high nibble down to not have four 0s at the start
-    return ((this.toUnsigned8BitInt()) and 0xF0) shr 4
+    return ((this.toUnsigned8BitInt()) and 0xF0) ushr 4
 }
 
 fun Int.checkBit(bit: Int): Boolean {
@@ -35,7 +35,7 @@ fun Int.checkBit(bit: Int): Boolean {
 }
 
 fun Int.getBit(bit: Int): Int {
-    return ((1 shl bit) and this) shr (bit)
+    return ((1 shl bit) and this) ushr (bit)
 }
 
 fun Int.toHexString(): String {

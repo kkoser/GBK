@@ -150,19 +150,16 @@ fun Cpu.increment8(location: Registers.Bit8) {
 fun Cpu.decrement8(location: Registers.Bit8) {
     setFlag(Cpu.Flag.N, true)
     val originalValue = registers.get(location)
-    var value = originalValue - 1
-    // Actually wrap around
-    value = value.toUnsigned8BitInt()
+    val value = (originalValue - 1).toUnsigned8BitInt()
 
-//    setFlag(Cpu.Flag.H, check8BitCarry(registers.get(location), -1))
-    setFlag(Cpu.Flag.H, check8BitCarrySubtraction(originalValue, -1))
+    setFlag(Cpu.Flag.H, (value and 0x0f) == 0x0f)
     setFlag(Cpu.Flag.Z, value == 0)
     registers.set(location, value)
 }
 
 // NOTE: 16-bit inc/dec don't modify any flags
 fun Cpu.increment16(location: Registers.Bit16) {
-    registers.set(location, (registers.get(location) + 1).toUnsigned16BitInt())
+    registers.set(location, (registers.get(location) + 1))
 }
 
 fun Cpu.decrement16(location: Registers.Bit16) {
@@ -171,7 +168,7 @@ fun Cpu.decrement16(location: Registers.Bit16) {
 
 fun Cpu.incrementMemory(location: Registers.Bit16) {
     val value = memory.read(registers.get(location))
-    val result = (value + 1).toUnsigned16BitInt()
+    val result = (value + 1)
     setFlag(Cpu.Flag.Z, result == 0)
     setFlag(Cpu.Flag.H, check8BitCarry(value, 1))
     setFlag(Cpu.Flag.N, false)
@@ -183,7 +180,7 @@ fun Cpu.decrementMemory(location: Registers.Bit16) {
     val value = memory.read(registers.get(location))
     val result = (value - 1).toUnsigned16BitInt()
     setFlag(Cpu.Flag.Z, result == 0)
-    setFlag(Cpu.Flag.H, check8BitCarrySubtraction(value, -1))
+    setFlag(Cpu.Flag.H, (value and 0x0F) == 0)
     setFlag(Cpu.Flag.N, true)
 
     memory.write(registers.get(location), result)
@@ -419,7 +416,7 @@ fun Cpu.daa() {
 
     var a = registers.get(Registers.Bit8.A)
     if (!checkFlag(Cpu.Flag.N)) {
-        if (checkFlag(Cpu.Flag.C) || a < 0x99) {
+        if (checkFlag(Cpu.Flag.C) || a > 0x99) {
             a += 0x60
             setFlag(Cpu.Flag.C, true)
         }

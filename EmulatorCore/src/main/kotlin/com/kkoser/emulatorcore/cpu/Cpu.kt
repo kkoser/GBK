@@ -35,6 +35,7 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
      */
     fun tick(): Int {
         if (halted) {
+            Thread.sleep(1000)
             return 0
         }
         ticks++
@@ -204,7 +205,7 @@ class Registers {
     fun set(register: Bit16, value: Int) {
         if (register == Bit16.SP) {
             // restrict the value to 16 bits
-            stackPointer = value and 0xFFFF
+            stackPointer = value
             return
         }
 

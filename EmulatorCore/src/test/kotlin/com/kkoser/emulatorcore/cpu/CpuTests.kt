@@ -8,6 +8,7 @@ import com.kkoser.emulatorcore.gpu.Lcd
 import com.kkoser.emulatorcore.gpu.NoOpRenderer
 import com.kkoser.emulatorcore.memory.MemoryBus
 import com.kkoser.emulatorcore.toHexString
+import com.kkoser.emulatorcore.toUnsigned8BitInt
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -178,6 +179,18 @@ class CpuTests {
                 assertEquals("$reg", cpu.registers.get(reg), value)
             }
         }
+    }
+
+    @Test
+    fun decrementWrap() {
+        cpu.registers.set(Registers.Bit8.B, 0)
+
+        cpu.decrement8(Registers.Bit8.B)
+
+        assertEquals(cpu.checkFlag(Cpu.Flag.N), true)
+        assertEquals(cpu.checkFlag(Cpu.Flag.H), true)
+        assertEquals(cpu.checkFlag(Cpu.Flag.Z), false)
+        assertEquals(cpu.registers.get(Registers.Bit8.B), 255)
     }
 
     private fun runCpuWithInstructions(instructions: Array<Int>) {
