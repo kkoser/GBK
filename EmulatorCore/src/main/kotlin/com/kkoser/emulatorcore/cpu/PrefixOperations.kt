@@ -23,13 +23,13 @@ fun Cpu.checkBitIndirect(register: Registers.Bit16, bit: Int) {
 }
 
 fun Cpu.resetBit(register: Registers.Bit8, bit: Int) {
-    val mask = (0 shl bit).inv()
+    val mask = (1 shl bit).inv()
     val arg = registers.get(register)
     registers.set(register, arg and mask)
 }
 
 fun Cpu.resetBitIndirect(register: Registers.Bit16, bit: Int) {
-    val mask = (0 shl bit).inv()
+    val mask = (1 shl bit).inv()
     val memoryLocation = registers.get(register)
     val arg = memory.read(memoryLocation)
     memory.write(memoryLocation, arg and mask)
