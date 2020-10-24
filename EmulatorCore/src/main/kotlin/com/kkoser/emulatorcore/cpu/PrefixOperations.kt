@@ -7,6 +7,7 @@ import com.kkoser.emulatorcore.getLowNibble
 import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithHighNibble
 import com.kkoser.emulatorcore.toIntWithLowerInt
+import com.kkoser.emulatorcore.toUnsigned16BitInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
 
 fun Cpu.checkBit(register: Registers.Bit8, bit: Int) {
@@ -237,7 +238,7 @@ fun Cpu.slaIndirect(location: Registers.Bit16) {
 fun Cpu.sra(location: Registers.Bit8) {
     val arg = registers.get(location)
     val msb = arg.getBit(7)
-    val result = ((arg ushr 1) and (msb shl 7)).toUnsigned8BitInt()
+    val result = ((arg ushr 1) or (msb shl 7)).toUnsigned8BitInt()
     setFlag(Cpu.Flag.C, arg.checkBit(0))
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.H, false)
