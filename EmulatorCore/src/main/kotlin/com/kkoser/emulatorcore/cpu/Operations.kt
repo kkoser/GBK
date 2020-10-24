@@ -139,7 +139,6 @@ fun Cpu.increment8(location: Registers.Bit8) {
     setFlag(Cpu.Flag.N, false)
     var value = registers.get(location) + 1
     // Actually wrap around
-//    value = if (value > Registers.MAX_VALUE_8) value % Registers.MAX_VALUE_8 else value
     value = value.toUnsigned8BitInt()
 
     setFlag(Cpu.Flag.H, check8BitCarry(registers.get(location), 1))
@@ -168,7 +167,7 @@ fun Cpu.decrement16(location: Registers.Bit16) {
 
 fun Cpu.incrementMemory(location: Registers.Bit16) {
     val value = memory.read(registers.get(location))
-    val result = (value + 1)
+    val result = (value + 1).toUnsigned8BitInt()
     setFlag(Cpu.Flag.Z, result == 0)
     setFlag(Cpu.Flag.H, check8BitCarry(value, 1))
     setFlag(Cpu.Flag.N, false)
