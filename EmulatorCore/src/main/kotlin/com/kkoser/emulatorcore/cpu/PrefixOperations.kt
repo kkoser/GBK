@@ -249,7 +249,7 @@ fun Cpu.sraIndirect(location: Registers.Bit16) {
     val arg = memory.read(memoryLocation)
 
     val msb = arg.getBit(7)
-    val result = ((arg ushr 1) and (msb shl 7)).toUnsigned8BitInt()
+    val result = ((arg ushr 1) or (msb shl 7)).toUnsigned8BitInt()
     setFlag(Cpu.Flag.C, arg.checkBit(0))
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.H, false)
