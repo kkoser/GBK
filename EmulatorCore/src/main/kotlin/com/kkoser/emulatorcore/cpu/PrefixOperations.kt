@@ -14,7 +14,7 @@ fun Cpu.checkBit(register: Registers.Bit8, bit: Int) {
 }
 
 fun Cpu.checkBitIndirect(register: Registers.Bit16, bit: Int) {
-    setFlag(Cpu.Flag.Z, memory.read(registers.get(register)).checkBit(bit))
+    setFlag(Cpu.Flag.Z, !(memory.read(registers.get(register))).checkBit(bit))
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.H, true)
 }
