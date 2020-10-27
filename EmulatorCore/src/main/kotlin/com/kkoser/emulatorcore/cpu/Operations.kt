@@ -416,23 +416,25 @@ fun Cpu.daa() {
     var a = registers.get(Registers.Bit8.A)
     if (!checkFlag(Cpu.Flag.N)) {
         if (checkFlag(Cpu.Flag.C) || a > 0x99) {
-            a += 0x60
+            a = (a + 0x60).toUnsigned16BitInt()
             setFlag(Cpu.Flag.C, true)
         }
         if (checkFlag(Cpu.Flag.H) || ((a and 0x0f) > 0x09)) {
-            a += 0x6
+            a = (a + 0x6).toUnsigned16BitInt()
         }
     } else {
         if (checkFlag(Cpu.Flag.C)) {
-            a -= 0x60
+            a = (a - 0x60).toUnsigned16BitInt()
         }
         if (checkFlag(Cpu.Flag.H)) {
-            a -= 0x6
+            a = (a - 0x6).toUnsigned16BitInt()
         }
     }
 
     setFlag(Cpu.Flag.Z, a == 0)
     setFlag(Cpu.Flag.H, false)
+
+    registers.set(Registers.Bit8.A, a)
 
 //    var regA = registers.get(Registers.Bit8.A)
 //
