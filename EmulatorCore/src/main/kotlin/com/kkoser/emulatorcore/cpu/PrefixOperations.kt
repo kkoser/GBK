@@ -4,10 +4,7 @@ import com.kkoser.emulatorcore.checkBit
 import com.kkoser.emulatorcore.getBit
 import com.kkoser.emulatorcore.getHighNibble
 import com.kkoser.emulatorcore.getLowNibble
-import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithHighNibble
-import com.kkoser.emulatorcore.toIntWithLowerInt
-import com.kkoser.emulatorcore.toUnsigned16BitInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
 
 fun Cpu.checkBit(register: Registers.Bit8, bit: Int) {
@@ -122,7 +119,7 @@ fun Cpu.rlIndirect(location: Registers.Bit16) {
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.H, false)
 
-    registers.set(location, result)
+    memory.write(memoryLocation, result)
 }
 
 fun Cpu.rrc(location: Registers.Bit8, forceZToOff: Boolean = false) {
@@ -146,8 +143,8 @@ fun Cpu.rrc(location: Registers.Bit8, forceZToOff: Boolean = false) {
 }
 
 fun Cpu.rrcIndirect(location: Registers.Bit16) {
-    val memorLocation = registers.get(location)
-    val arg = memory.read(memorLocation)
+    val memoryLocation = registers.get(location)
+    val arg = memory.read(memoryLocation)
     var result = (arg ushr 1).toUnsigned8BitInt()
     if (arg and 1 != 0) {
         result = result or (1 shl 7)
@@ -159,7 +156,7 @@ fun Cpu.rrcIndirect(location: Registers.Bit16) {
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.H, false)
 
-    memory.write(memorLocation, result)
+    memory.write(memoryLocation, result)
 }
 
 fun Cpu.rr(location: Registers.Bit8, forceZToOff: Boolean = false) {
