@@ -2,6 +2,7 @@ package com.kkoser.emulatorcore.memory
 
 import com.kkoser.emulatorcore.Timer
 import com.kkoser.emulatorcore.cpu.InterruptHandler
+import com.kkoser.emulatorcore.cpu.LDH_OFFSET
 import com.kkoser.emulatorcore.gpu.Dma
 import com.kkoser.emulatorcore.gpu.Gpu
 import com.kkoser.emulatorcore.gpu.Lcd
@@ -34,6 +35,8 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
     private val hram = Array(127, {0})
     private var bootRomEnabled = true
     fun read(position: Int): Int {
+        if (position > LDH_OFFSET)
+            println("reading at position ${position.toHexString()}")
         // Things to implement here:
         /*
         - wrap first 32k into rom via a rom class (for mbc support)
@@ -153,134 +156,8 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
         return 0
     }
 
-    /**
-     * Read a _signed_ 8 bit value
-     *
-     * Returns a Byte to ensure that values stay int he 8 byte range when being converted from their unsigned representations
-     */
-    fun readSigned(position: Int): Byte {
-        return readSignedInternal(position).toByte()
-    }
-
-    private fun readSignedInternal(position: Int): Int {
-        when(position) {
-            in 0..0x8000 -> {
-                if (bootRomEnabled && position < 0x100) {
-                    return gameboyClassicBootRom[position]
-                }
-                return cartridgeMemory.readSigned(position)
-            }
-            in 0x8000..0x9FFF -> {
-                // VRAM is only accessible during v/hlock
-                // This check is handled internally by the gpu
-                return gpu.read(position)
-            }
-            in 0xA000..0xBFFF -> {
-                // external RAM
-                return cartridgeMemory.readSigned(position)
-            }
-            in 0xC000..0xCFFF -> {
-                // Working ram bank 1
-                return internalRam[position - 0xC000]
-            }
-            in 0xD000..0xDFFF -> {
-                // Work ram bank 2 (only switchable in GBC)
-                return internalRam[position - 0xC000]
-            }
-            in  0xE000..0xFDFF -> {
-                // Echo memory
-                return readSignedInternal(position - (0xE000-0xC000))
-            }
-            in 0xFE00..0xFE9F -> {
-                // OAM
-                return gpu.read(position)
-            }
-            in 0xFEA0..0xFEFF -> {
-                // not usabled
-                return 0
-            }
-            in 0xFF00..0xFF7F -> {
-                // IO ports
-                when(position) {
-                    0xFF04 -> {
-                        return timer.dividerCount
-                    }
-                    0xFF05 -> {
-                        // Timer value
-                        return timer.count
-                    }
-                    0xFF06 -> {
-                        // Timer modulator
-                        return timer.offset
-                    }
-                    0xFF07 -> {
-                        // Timer frequency
-                        throw RuntimeException("trying to read timer frequency, you should go implement that")
-                    }
-                    0xFF0F -> {
-                        return interruptHandler.registerIF
-                    }
-
-                    // Sound register, currently always off
-                    0xFF24 -> {
-                        return 0
-                    }
-                    0xFF25 -> {
-                        return 0
-                    }
-                    0xFF26 -> {
-                        return 0
-                    }
-
-                    // region LCD
-                    0xFF40 -> {
-                        return lcd.control
-                    }
-                    0xFF41 -> {
-                        return lcd.status
-                    }
-                    0xFF42 -> {
-                        return lcd.scrollY
-                    }
-                    0xFF43 -> {
-                        return lcd.scrollX
-                    }
-                    0xFF44 -> {
-                        return lcd.currentScanLine
-                    }
-                    0xFF45 -> {
-                        return lcd.lineCompare
-                    }
-
-                    // region GPU
-                    0xFF47 -> {
-                        return gpu.bgPallete
-                    }
-                    0xFF48 -> {
-                        return gpu.obj0Pallete
-                    }
-                    0xFF49 -> {
-                        return gpu.obj1Pallete
-                    }
-                }
-            }
-            in 0xFF80..0xFFFE -> {
-                return hram[position - 0xFF80]
-                // HRAM
-            }
-            0xFFFF -> {
-                return interruptHandler.registerIE
-                // IME
-            }
-            else -> {
-                Logger.getGlobal().log(Level.SEVERE, "Writing outside known memory at location ${position.toHexString()}, returning 0xFF")
-                return 0xFF
-            }
-        }
-        return 0xFF
-    }
-
     fun write(position: Int, value: Int) {
+        println("writing value ${value.toHexString()} to position ${position.toHexString()}")
         when(position) {
             in 0..0x8000 -> {
                 cartridgeMemory.write(position, value)

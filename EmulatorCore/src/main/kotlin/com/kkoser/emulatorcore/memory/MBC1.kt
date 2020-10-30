@@ -36,10 +36,6 @@ class MBC1(val file: File) : CartridgeMemory {
 
     }
 
-    override fun readSigned(position: Int): Int {
-        return 0
-    }
-
     override fun write(position:Int, value: Int) {
         // Intercept to control the changing of ram and rom bank changes
         if (position in 0x2000..0x4000) {

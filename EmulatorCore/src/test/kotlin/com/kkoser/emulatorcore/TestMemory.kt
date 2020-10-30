@@ -12,10 +12,6 @@ class TestMemory : CartridgeMemory {
         return memory[position].toUnsigned8BitInt()
     }
 
-    override fun readSigned(position: Int): Int {
-        return memory[position]
-    }
-
     override fun write(position: Int, value: Int) {
         memory[position] = value
     }

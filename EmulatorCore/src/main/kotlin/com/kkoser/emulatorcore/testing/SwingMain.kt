@@ -54,7 +54,7 @@ object SwingMain {
 //                val gameFile = File("/Users/kkoser/Downloads/01-special.gb") //FAIL (repeatedly on DAA)
 //                val gameFile = File("/Users/kkoser/Downloads/06-ld r,r.gb") // PASS
 //                val gameFile = File("/Users/kkoser/Downloads/10-bit ops.gb") // PASS
-//                val gameFile = File("/Users/kkoser/Downloads/11-op a,(hl).gb") // FAIL
+//                val gameFile = File("/Users/kkoser/Downloads/11-op a,(hl).gb") // PASS
 //                val gameFile = File("/Users/kkoser/Downloads/09-op r,r.gb") // pass
 //                val gameFile = File("/Users/kkoser/Downloads/08-misc instrs.gb") // FAIL in loop, does not start
 //                val gameFile = File("/Users/kkoser/Downloads/07-jr,jp,call,ret,rst.gb") // FAIL, does not finish

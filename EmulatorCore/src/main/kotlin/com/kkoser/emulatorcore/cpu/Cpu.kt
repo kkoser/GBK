@@ -5,6 +5,7 @@ import com.kkoser.emulatorcore.getLow8Bits
 import com.kkoser.emulatorcore.memory.MemoryBus
 import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithLowerInt
+import com.kkoser.emulatorcore.toUnsigned16BitInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
 import jdk.internal.org.objectweb.asm.Opcodes
 import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode
@@ -68,7 +69,7 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         if (ticks % 1 == 0) {
 //            System.out.println("total ticks $ticks, cycles:$cycleCount")
             if (pc >= 0x100) {
-//                printDebugState(operation)
+                printDebugState(operation)
             }
         }
 
@@ -108,9 +109,31 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
     }
 
     fun printDebugState(operation: Operation) {
-        if (!debug)
-            return
-        System.out.println("AF=${registers.get(Registers.Bit16.AF).toHexString()}, BC=${registers.get(Registers.Bit16.BC).toHexString()}, DE=${registers.get(Registers.Bit16.DE).toHexString()}, HL=${registers.get(Registers.Bit16.HL).toHexString()}, SP=${registers.get(Registers.Bit16.SP).toHexString()}, PC=${pc.toHexString()}, ${describeFlags()}----, ${operation.title}")
+//        if (!debug)
+//            return
+//        System.out.println("AF=${registers.get(Registers.Bit16.AF).toHexString()}, BC=${registers.get(Registers.Bit16.BC).toHexString()}, DE=${registers.get(Registers.Bit16.DE).toHexString()}, HL=${registers.get(Registers.Bit16.HL).toHexString()}, SP=${registers.get(Registers.Bit16.SP).toHexString()}, PC=${pc.toHexString()}, ${describeFlags()}----, ${operation.title}")
+        val af = registers.get(Registers.Bit16.AF)
+        val bc = registers.get(Registers.Bit16.BC)
+        val de = registers.get(Registers.Bit16.DE)
+        val hl = registers.get(Registers.Bit16.HL)
+        val sp = registers.get(Registers.Bit16.SP)
+
+        fun getFlags(): String  {
+                val result = StringBuilder()
+                result.append(if (checkFlag(Flag.Z)) 'Z' else '-')
+                result.append(if (checkFlag(Flag.N)) 'N' else '-')
+                result.append(if (checkFlag(Flag.H)) 'H' else '-')
+                result.append(if (checkFlag(Flag.C)) 'C' else '-')
+                result.append("----")
+                return result.toString()
+        }
+
+        val flags = getFlags()
+
+
+
+        println(String.format("AF=%04x, BC=%04x, DE=%04x, HL=%04x, SP=%04x, PC=%04x, %s, %s", af, bc, de, hl, sp, pc, flags.toString(), operation.title))
+
     }
 
     fun checkStack(): Int {
@@ -205,7 +228,7 @@ class Registers {
     fun set(register: Bit16, value: Int) {
         if (register == Bit16.SP) {
             // restrict the value to 16 bits
-            stackPointer = value
+            stackPointer = value.toUnsigned16BitInt()
             return
         }
 

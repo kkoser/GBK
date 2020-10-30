@@ -13,9 +13,10 @@ fun main(vararg args: String) {
 
 //    val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
 //    val gameFile = File("/Users/kkoser/Downloads/01-special.gb")
-    val gameFile = File("/Users/kkoser/Downloads/07-jr,jp,call,ret,rst.gb")
+//    val gameFile = File("/Users/kkoser/Downloads/07-jr,jp,call,ret,rst.gb")
 //    val gameFile = File("/Users/kkoser/Downloads/03-op sp,hl.gb")
 //    val gameFile = File("/Users/kkoser/Downloads/08-misc instrs.gb")
+    val gameFile = File("/Users/kkoser/Projects/gb-test-roms/cpu_instrs/source/test.gb")
 
     val rom = BasicROM(gameFile.inputStream())
     val timer = Timer()

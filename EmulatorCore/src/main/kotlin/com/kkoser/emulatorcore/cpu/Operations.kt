@@ -1,5 +1,8 @@
 package com.kkoser.emulatorcore.cpu
 
+import com.kkoser.emulatorcore.add8BitSigned
+import com.kkoser.emulatorcore.getLow8Bits
+import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithLowerInt
 import com.kkoser.emulatorcore.toUnsigned16BitInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
@@ -23,7 +26,7 @@ fun Cpu.loadImmediate8(register: Registers.Bit8) {
 fun Cpu.loadImmediate16(register: Registers.Bit16) {
     val lower = memory.read(pc + 1)
     val higher = memory.read(pc + 2)
-    val  value = ((higher shl 8) or lower).toUnsigned16BitInt()
+    val  value = higher.toIntWithLowerInt(lower)
     if (value > Registers.MAX_VALUE_16) throw RuntimeException("Read an immediate value thats not a valid immediate 8 bit value")
     registers.set(register, value)
 }
@@ -88,6 +91,7 @@ fun Cpu.loadImmediateLocationIntoRegister(register: Registers.Bit8) {
     val lower = memory.read(pc + 1)
     val higher = memory.read(pc + 2)
     val location = ((higher shl 8) or lower).toUnsigned16BitInt()
+//    println("loading for register $register at location ${location.toHexString()}")
     registers.set(register, memory.read(location))
 }
 
@@ -119,10 +123,10 @@ fun Cpu.loadRegisterAValueIntoIndirectRegisterLocation(register: Registers.Bit8)
 
 fun Cpu.loadRegisterWithImmediateOffsetIntoRegister(destination: Registers.Bit16, source: Registers.Bit16) {
     val oldVal = registers.get(source)
-    val offset = memory.readSigned(pc + 1)
-    val result = oldVal + offset
-    setFlag(Cpu.Flag.H, check8BitCarry(oldVal, offset.toInt()))
-    setFlag(Cpu.Flag.C, result > 0xFFFF)
+    val offset = memory.read(pc + 1)
+    val result = oldVal.add8BitSigned(offset)
+    setFlag(Cpu.Flag.H, (oldVal and 0x0F) + (offset and 0x0F) > 0x0F)
+    setFlag(Cpu.Flag.C, (oldVal + offset) > 0XFF)
 
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.Z, false)
@@ -210,10 +214,10 @@ fun Cpu.add8Immediate() {
 
 fun Cpu.add8ImmediateToSp() {
     val sp = registers.get(Registers.Bit16.SP)
-    val immediate = memory.readSigned(pc + 1)
-    val result = (sp + immediate).toUnsigned16BitInt()
-    setFlag(Cpu.Flag.H, check8BitCarry(sp, immediate.toInt()))
-    setFlag(Cpu.Flag.C, sp + immediate > 0xffff)
+    val immediate = memory.read(pc + 1)
+    val result = sp.add8BitSigned(immediate)
+    setFlag(Cpu.Flag.H, (sp and 0x0F) + (immediate and 0x0F) > 0x0F)
+    setFlag(Cpu.Flag.C, (sp.getLow8Bits() + immediate) > 0xFF)
 
     setFlag(Cpu.Flag.Z, false)
     setFlag(Cpu.Flag.N, false)
@@ -409,7 +413,7 @@ fun Cpu.complementA() {
 // endregion
 
 // Borrowed from https://github.com/kotcrab/xgbc/blob/master/src/main/kotlin/com/kotcrab/xgbc/cpu/OpCodesProcessor.kt
-// I'm not super sure what this one does
+// Converts the value in A into a BCD encoded value, where each nybble is a decimal digit 0-9
 fun Cpu.daa() {
     // based on https://forums.nesdev.com/viewtopic.php?t=15944
 
@@ -490,8 +494,8 @@ fun Cpu.daa() {
 
 fun Cpu.jumpRelative() {
     // We add 2 to this, since the jump command is 2 bytes long itself (and counts)
-    val offset = memory.readSigned(pc + 1) + 2
-    pc += offset
+    val offset = memory.read(pc + 1)
+    pc = pc.add8BitSigned(offset) + 2
 }
 
 fun Cpu.jumpRelativeFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
@@ -518,10 +522,10 @@ fun Cpu.jumpRegister(register: Registers.Bit16) {
 
 fun Cpu.popStack(): Int {
     val pcl = memory.read(registers.get(Registers.Bit16.SP))
-    val pch = memory.read(registers.get(Registers.Bit16.SP) + 1)
+    val pch = memory.read((registers.get(Registers.Bit16.SP) + 1).toUnsigned16BitInt())
 
     // move the stack back one address (so 2 bytes)
-    registers.set(Registers.Bit16.SP, registers.get(Registers.Bit16.SP) + 2)
+    registers.set(Registers.Bit16.SP, (registers.get(Registers.Bit16.SP) + 2).toUnsigned16BitInt())
 
     return pch.toIntWithLowerInt(pcl).toUnsigned16BitInt()
 }
@@ -555,14 +559,14 @@ fun Cpu.retFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
 }
 
 fun Cpu.call(location: Int) {
-    push(pc + 3)
+    push((pc + 3).toUnsigned16BitInt())
     pc = location.toUnsigned16BitInt()
 }
 
 fun Cpu.callImmediate() {
     val lower = memory.read(pc + 1)
     val higher = memory.read(pc + 2)
-    val location = ((higher shl 8) or lower)
+    val location = higher.toIntWithLowerInt(lower)
 
     call(location)
 }

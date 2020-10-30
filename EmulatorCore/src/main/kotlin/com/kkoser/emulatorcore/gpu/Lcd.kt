@@ -59,7 +59,7 @@ class Lcd {
 
     var lineCompare = 0
 
-    var currentScanLine = 0
+    var currentScanLine = 2
         @TestOnly set
     var mode: Mode = Mode.OAM_SEARCH
         @TestOnly set

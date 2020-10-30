@@ -14,7 +14,6 @@ class Emulator(val cpu: Cpu,
                val lcd: Lcd) {
 
     fun run() {
-//        Thread.sleep(15000)
         var totalInstructions = 0L
         while (true){
             interruptHandler.handleInterrupts(cpu)
@@ -23,7 +22,6 @@ class Emulator(val cpu: Cpu,
             if (totalInstructions % 1000 == 0L) {
 //                Logger.getGlobal().log(Level.INFO, "total instructions $totalInstructions")
             }
-//            System.out.println("total cycles $totalCycles")
             timer.tick(cycles, interruptHandler)
             lcd.tick(cycles, interruptHandler)
         }

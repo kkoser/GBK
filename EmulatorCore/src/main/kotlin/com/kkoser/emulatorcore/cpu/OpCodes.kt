@@ -270,7 +270,7 @@ object OpCodes {
             0xE5 to Operation(1, 16, "PUSH HL", { cpu -> cpu.pushRegister(Registers.Bit16.HL) }),
             0xE6 to Operation(2, 8, "AND d8", { cpu -> cpu.andImmediate() }),
             0xE7 to Operation(1, 16, "RST 20H", { cpu -> cpu.reset(0x20) }, true, 16),
-            0xE8 to Operation(2, 16, "ADD SP,r8", { cpu -> cpu.add8ImmediateToSp() }),
+            0xE8 to Operation(2, 16, "`ADD SP,r8`", { cpu -> cpu.add8ImmediateToSp() }),
             0xE9 to Operation(1, 4, "JP (HL)", { cpu -> cpu.jumpRegister(Registers.Bit16.HL) }, true, 4),
             0xEA to Operation(3, 16, "LD (a16),A", { cpu -> cpu.loadRegisterIntoImmediateLocation(Registers.Bit8.A) }),
             0xEB to invalid,
