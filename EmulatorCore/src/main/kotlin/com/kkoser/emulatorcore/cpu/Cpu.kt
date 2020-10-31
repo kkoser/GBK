@@ -12,6 +12,8 @@ import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode
 import java.util.logging.Level
 import java.util.logging.Logger
 
+public var forceLineTo0 = false
+
 class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
     // These values need to be internal so they can be accessed and modified from the extension methods
     internal val registers = Registers()
@@ -24,6 +26,8 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
     private var ticks = 0
     private var cycleCount = 0
     private var debug: Boolean = debug
+
+    var jumpTaken = false
 
     enum class Flag(val mask: Int) {
         Z(0b10000000), N(0b01000000), H(0b00100000), C(0b00010000)
@@ -44,6 +48,9 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         if (pc > 0xFFFF) {
             throw RuntimeException("pc is out of memory memory range at ${pc.toHexString()}")
         }
+//
+//        if (pc > 0x100)
+//            forceLineTo0 = true
 
         var usePrefixOpcodes = false
         val oldPc = pc
@@ -59,6 +66,9 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         val cyclesTaken = performOperation(operation, oldPc)
         cycleCount += cyclesTaken
 
+        // Clear jump flag
+        jumpTaken = false
+
         return cyclesTaken
     }
 
@@ -69,7 +79,7 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         if (ticks % 1 == 0) {
 //            System.out.println("total ticks $ticks, cycles:$cycleCount")
             if (pc >= 0x100) {
-                printDebugState(operation)
+//                printDebugState(operation)
             }
         }
 
@@ -83,12 +93,12 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
             return operation.cycles
         } else {
             // PC has already been moved, so we don't need to move it
-            if (oldPc == pc) {
+            if (jumpTaken) {
                 // Jump was NOT taken, so move the pc ourselves
+                return operation.cycles
+            } else {
                 pc += operation.numBytes
                 return operation.notTakenCycles
-            } else {
-                return operation.cycles
             }
         }
     }

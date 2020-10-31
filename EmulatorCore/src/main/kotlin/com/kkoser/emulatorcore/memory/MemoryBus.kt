@@ -8,6 +8,7 @@ import com.kkoser.emulatorcore.gpu.Gpu
 import com.kkoser.emulatorcore.gpu.Lcd
 import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toUnsigned8BitInt
+import com.kkoser.emulatorcore.cpu.forceLineTo0
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -35,9 +36,9 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
     private val hram = Array(127, {0})
     private var bootRomEnabled = true
     fun read(position: Int): Int {
-        if (position > LDH_OFFSET)
-            println("reading at position ${position.toHexString()}")
-        // Things to implement here:
+//        if (position > LDH_OFFSET)
+//            println("reading at position ${position.toHexString()}")
+//         Things to implement here:
         /*
         - wrap first 32k into rom via a rom class (for mbc support)
         - add checks for vram availability based on vlock flags (can't be read outside of vblank)
@@ -127,6 +128,8 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                         return lcd.scrollX
                     }
                     0xFF44 -> {
+                        if (forceLineTo0)
+                            return 0
                         return lcd.currentScanLine
                     }
                     0xFF45 -> {
@@ -157,7 +160,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
     }
 
     fun write(position: Int, value: Int) {
-        println("writing value ${value.toHexString()} to position ${position.toHexString()}")
+//        println("writing value ${value.toHexString()} to position ${position.toHexString()}")
         when(position) {
             in 0..0x8000 -> {
                 cartridgeMemory.write(position, value)
@@ -193,7 +196,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                 // IO ports
                 when(position) {
                     0xFF01 -> {
-                        print("${value.toChar()}")
+//                        print("${value.toChar()}")
 //                         TODO: Implement serial
                         // no-op, serial
 //                        TODO("Implement serial")

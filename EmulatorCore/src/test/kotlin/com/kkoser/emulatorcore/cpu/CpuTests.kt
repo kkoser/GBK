@@ -2,6 +2,7 @@ package com.kkoser.emulatorcore.cpu
 
 import com.kkoser.emulatorcore.TestMemory
 import com.kkoser.emulatorcore.Timer
+import com.kkoser.emulatorcore.add8BitSigned
 import com.kkoser.emulatorcore.gpu.Dma
 import com.kkoser.emulatorcore.gpu.Gpu
 import com.kkoser.emulatorcore.gpu.Lcd
@@ -191,6 +192,15 @@ class CpuTests {
         assertEquals(cpu.checkFlag(Cpu.Flag.H), true)
         assertEquals(cpu.checkFlag(Cpu.Flag.Z), false)
         assertEquals(cpu.registers.get(Registers.Bit8.B), 255)
+    }
+
+    @Test
+    fun jrNegativeTest() {
+        val x = (0xc7c0).add8BitSigned(0xFE)
+        assertEquals(x, 0xc7be)
+
+        val y = (0xc7c2).add8BitSigned(0xFE)
+        assertEquals(y, 0xc7c0)
     }
 
     private fun runCpuWithInstructions(instructions: Array<Int>) {

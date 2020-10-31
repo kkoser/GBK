@@ -98,15 +98,12 @@ fun Cpu.loadImmediateLocationIntoRegister(register: Registers.Bit8) {
 val LDH_OFFSET = 0xFF00
 
 fun Cpu.ldhRegisterValueIntoImmediate() {
-    if (pc == 0xc6d6) println("Reading with offset ${memory.read(pc + 1)}")
     val location = memory.read(pc + 1) + LDH_OFFSET
     val value = registers.get(Registers.Bit8.A)
     memory.write(location, value)
 }
 
 fun Cpu.ldhImmediateMemoryLocationIntoRegister() {
-    if (pc == 0xc6d6) println("Reading with offset ${memory.read(pc + 1)}")
-
     val locationToReadFrom = memory.read(pc + 1).toUnsigned8BitInt() + LDH_OFFSET
     registers.set(Registers.Bit8.A, memory.read(locationToReadFrom))
 }
@@ -417,28 +414,29 @@ fun Cpu.complementA() {
 fun Cpu.daa() {
     // based on https://forums.nesdev.com/viewtopic.php?t=15944
 
-    var a = registers.get(Registers.Bit8.A)
+    val a = registers.get(Registers.Bit8.A)
+    var res = a
     if (!checkFlag(Cpu.Flag.N)) {
         if (checkFlag(Cpu.Flag.C) || a > 0x99) {
-            a = (a + 0x60).toUnsigned16BitInt()
+            res = (res + 0x60).toUnsigned8BitInt()
             setFlag(Cpu.Flag.C, true)
         }
         if (checkFlag(Cpu.Flag.H) || ((a and 0x0f) > 0x09)) {
-            a = (a + 0x6).toUnsigned16BitInt()
+            res = (res + 0x6).toUnsigned8BitInt()
         }
     } else {
         if (checkFlag(Cpu.Flag.C)) {
-            a = (a - 0x60).toUnsigned16BitInt()
+            res = (res - 0x60).toUnsigned8BitInt()
         }
         if (checkFlag(Cpu.Flag.H)) {
-            a = (a - 0x6).toUnsigned16BitInt()
+            res = (res - 0x6).toUnsigned8BitInt()
         }
     }
 
-    setFlag(Cpu.Flag.Z, a == 0)
+    setFlag(Cpu.Flag.Z, res == 0)
     setFlag(Cpu.Flag.H, false)
 
-    registers.set(Registers.Bit8.A, a)
+    registers.set(Registers.Bit8.A, res)
 
 //    var regA = registers.get(Registers.Bit8.A)
 //
@@ -496,6 +494,7 @@ fun Cpu.jumpRelative() {
     // We add 2 to this, since the jump command is 2 bytes long itself (and counts)
     val offset = memory.read(pc + 1)
     pc = pc.add8BitSigned(offset) + 2
+    jumpTaken = true
 }
 
 fun Cpu.jumpRelativeFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
@@ -507,6 +506,7 @@ fun Cpu.jumpRelativeFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
 fun Cpu.jumpImmediate() {
     val location = memory.read(pc + 2).toIntWithLowerInt(memory.read(pc + 1))
     pc = location
+    jumpTaken = true
 }
 
 fun Cpu.jumpImmediateFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
@@ -518,6 +518,7 @@ fun Cpu.jumpImmediateFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
 fun Cpu.jumpRegister(register: Registers.Bit16) {
     val location = registers.get(register)
     pc = location
+    jumpTaken = true
 }
 
 fun Cpu.popStack(): Int {
@@ -550,6 +551,7 @@ fun Cpu.pushRegister(register: Registers.Bit16) {
 
 fun Cpu.ret() {
     pc = popStack()
+    jumpTaken = true
 }
 
 fun Cpu.retFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
@@ -561,6 +563,7 @@ fun Cpu.retFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
 fun Cpu.call(location: Int) {
     push((pc + 3).toUnsigned16BitInt())
     pc = location.toUnsigned16BitInt()
+    jumpTaken = true
 }
 
 fun Cpu.callImmediate() {
@@ -580,6 +583,7 @@ fun Cpu.callImmediateFlag(flag: Cpu.Flag, expectedFlagValue: Boolean) {
 fun Cpu.reset(location: Int) {
     push(pc+1)
     pc = location
+    jumpTaken = true
 }
 
 fun Cpu.halt() {
