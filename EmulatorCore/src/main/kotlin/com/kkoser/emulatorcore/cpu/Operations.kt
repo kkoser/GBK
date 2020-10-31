@@ -1,6 +1,7 @@
 package com.kkoser.emulatorcore.cpu
 
 import com.kkoser.emulatorcore.add8BitSigned
+import com.kkoser.emulatorcore.getHigh8Bits
 import com.kkoser.emulatorcore.getLow8Bits
 import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithLowerInt
@@ -35,9 +36,10 @@ fun Cpu.loadImmediate16(register: Registers.Bit16) {
  * Stores the value of the given register into the 16 bit address read following the opcode (pc+2)
  */
 fun Cpu.storeIntoImmediateMemoryLocation(source: Registers.Bit16) {
-    val location = memory.read(pc + 1).toIntWithLowerInt(memory.read(pc + 2))
-
-    memory.write(location, registers.get(source))
+    val location = memory.read(pc + 2).toIntWithLowerInt(memory.read(pc + 1))
+    val value = registers.get(source)
+    memory.write(location, value.getLow8Bits())
+    memory.write(location + 1, value.getHigh8Bits())
 }
 
 fun Cpu.storeImmediateIntoIndirectMemoryLocation(source: Registers.Bit16) {
@@ -91,7 +93,8 @@ fun Cpu.loadImmediateLocationIntoRegister(register: Registers.Bit8) {
     val lower = memory.read(pc + 1)
     val higher = memory.read(pc + 2)
     val location = ((higher shl 8) or lower).toUnsigned16BitInt()
-//    println("loading for register $register at location ${location.toHexString()}")
+//    if (pc > 0x100)
+//        println("loading for register $register at location ${location.toHexString()}")
     registers.set(register, memory.read(location))
 }
 
@@ -123,7 +126,7 @@ fun Cpu.loadRegisterWithImmediateOffsetIntoRegister(destination: Registers.Bit16
     val offset = memory.read(pc + 1)
     val result = oldVal.add8BitSigned(offset)
     setFlag(Cpu.Flag.H, (oldVal and 0x0F) + (offset and 0x0F) > 0x0F)
-    setFlag(Cpu.Flag.C, (oldVal + offset) > 0XFF)
+    setFlag(Cpu.Flag.C, (oldVal.getLow8Bits() + offset) > 0xFF)
 
     setFlag(Cpu.Flag.N, false)
     setFlag(Cpu.Flag.Z, false)

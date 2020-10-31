@@ -160,6 +160,9 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
     }
 
     fun write(position: Int, value: Int) {
+        if (position == 0xdd02) {
+//                    println("writing value ${value.toHexString()} to position ${position.toHexString()}")
+        }
 //        println("writing value ${value.toHexString()} to position ${position.toHexString()}")
         when(position) {
             in 0..0x8000 -> {

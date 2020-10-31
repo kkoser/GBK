@@ -48,7 +48,7 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         if (pc > 0xFFFF) {
             throw RuntimeException("pc is out of memory memory range at ${pc.toHexString()}")
         }
-//
+
 //        if (pc > 0x100)
 //            forceLineTo0 = true
 

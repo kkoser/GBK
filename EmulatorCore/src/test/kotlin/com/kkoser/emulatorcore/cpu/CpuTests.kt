@@ -194,15 +194,6 @@ class CpuTests {
         assertEquals(cpu.registers.get(Registers.Bit8.B), 255)
     }
 
-    @Test
-    fun jrNegativeTest() {
-        val x = (0xc7c0).add8BitSigned(0xFE)
-        assertEquals(x, 0xc7be)
-
-        val y = (0xc7c2).add8BitSigned(0xFE)
-        assertEquals(y, 0xc7c0)
-    }
-
     private fun runCpuWithInstructions(instructions: Array<Int>) {
         cpu.pc = 0
         testMemory.setROM(instructions)
