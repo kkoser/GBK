@@ -12,7 +12,7 @@ typealias Operator = (Cpu) -> Unit
 open class Operation(val numBytes: Int,
                      val cycles: Int,
                      val title: String,
-                     val operation: Operator,
+                     val operator: Operator,
                      val isJump: Boolean = false,
                      val notTakenCycles: Int = 0)
 
@@ -234,7 +234,7 @@ object OpCodes {
             0xC4 to Operation(3, 24, "CALL NZ,a16", { cpu -> cpu.callImmediateFlag(Cpu.Flag.Z, false) }, true, 12),
             0xC5 to Operation(1, 16, "PUSH BC", { cpu -> cpu.pushRegister(Registers.Bit16.BC) }),
             0xC6 to Operation(2, 8, "ADD A,d8", { cpu -> cpu.add8Immediate() }),
-            0xC7 to Operation(1, 16, "RST 00H", { cpu -> cpu.reset(0x00) }),
+            0xC7 to Operation(1, 16, "RST 00H", { cpu -> cpu.reset(0x00) }, isJump = true, notTakenCycles = 16),
             0xC8 to Operation(1, 20, "RET Z", { cpu -> cpu.retFlag(Cpu.Flag.Z, true) }, true, 8),
             0xC9 to Operation(1, 16, "RET", { cpu -> cpu.ret() }, true, 16),
             0xCA to Operation(3, 16, "JP Z,a16", { cpu -> cpu.jumpImmediateFlag(Cpu.Flag.Z, true) }, true, 12),
@@ -254,7 +254,7 @@ object OpCodes {
             0xD6 to Operation(2, 8, "SUB d8", { cpu -> cpu.sub8Immediate() }),
             0xD7 to Operation(1, 16, "RST 10H", { cpu -> cpu.reset(0x10) }, true, 16),
             0xD8 to Operation(1, 20, "RET C", { cpu -> cpu.retFlag(Cpu.Flag.C, true) }, true, 8),
-            0xD9 to Operation(1, 16, "RETI", { cpu -> cpu.ime = true; cpu.ret() }, true, 16),
+            0xD9 to Operation(1, 16, "RETI", { cpu -> cpu.ret(); cpu.ime = true;  }, true, 16),
             0xDA to Operation(3, 16, "JP C,a16", { cpu -> cpu.jumpImmediateFlag(Cpu.Flag.C, true) }, true, 12),
             0xDB to invalid,
             0xDC to Operation(3, 24, "CALL C,a16", { cpu -> cpu.callImmediateFlag(Cpu.Flag.C, true) }, true, 12),
