@@ -12,16 +12,19 @@ class Timer {
         const val DIVIDER_MAX = 255
     }
 
+    // Timer fields
     var enabled = true
-    private var currentMax: Int = CPU_SPEED / 4096
-    private var dividerCycleCounter = 0
+    private var currentIncreaseLimitCycles =  4096
+    private var cyclesUntilIncrement = 0
     var count = 0
-        private set
-    var dividerCount = 0
-        private set
     private var currentMode = 0
     var offset = 0
-        set(value) { field = value % currentMax }
+        set(value) { field = value % 255 }
+
+    // Divider fields
+    private var dividerCycleCounter = 0
+    var dividerCount = 0
+        private set
 
     fun tick(cyclesThisTick: Int, interruptHandler: InterruptHandler) {
         // Do the divider first, since it cannot be turned off
@@ -36,27 +39,32 @@ class Timer {
             return
         }
 
-        count += cyclesThisTick
-        if (count >= currentMax) {
-            // throw interrupt
-            count = offset
-            interruptHandler.interrupt(InterruptHandler.Interrupt.CLOCK)
+        cyclesUntilIncrement += cyclesThisTick
+        if (cyclesUntilIncrement >= currentIncreaseLimitCycles) {
+            cyclesUntilIncrement -= currentIncreaseLimitCycles
+            count += 1
+            if (count > 255) {
+                // throw interrupt
+                count = offset
+                interruptHandler.interrupt(InterruptHandler.Interrupt.CLOCK)
+            }
         }
+
     }
 
     fun setTMC(memoryValue: Int) {
         when(memoryValue and 0b11) {
             0b00 -> {
-                currentMax = CPU_SPEED / 4096
+                currentIncreaseLimitCycles =  1024 / 4
             }
             0b01 -> {
-                currentMax = CPU_SPEED / 262144
+                currentIncreaseLimitCycles = 16 / 4
             }
             0b10 -> {
-                currentMax = CPU_SPEED / 65536
+                currentIncreaseLimitCycles =  64 / 4
             }
             0b11 -> {
-                currentMax = CPU_SPEED / 16384
+                currentIncreaseLimitCycles = 256 / 4
             }
         }
 

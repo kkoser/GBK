@@ -33,7 +33,8 @@ class TimerTests {
 
     @Test
     fun interruptAt4096Hz() {
-        for (i in 0..(1024 * 10)) {
+        // TIMA goes up by 1 every 4096 cycles, and interrupts at 256
+        for (i in 0..(4096 * 256 * 10)) {
             timer.tick(1, interruptHandler)
         }
 
@@ -48,7 +49,8 @@ class TimerTests {
         memory.write(0xFF07, 0b111)
         assertEquals(timer.enabled, true)
 
-        for (i in 0..(256*10)) {
+        // This mode increments every 64 cycles, or 64*256 for an interrupt
+        for (i in 0..(16384 * 10)) {
             timer.tick(1, interruptHandler)
         }
 

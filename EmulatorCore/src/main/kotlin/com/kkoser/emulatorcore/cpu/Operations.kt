@@ -590,7 +590,9 @@ fun Cpu.reset(location: Int) {
 }
 
 fun Cpu.halt() {
+    println("HALTING")
     halted = true
+//    pc += 1
 }
 
 fun Cpu.scf() {

@@ -1,5 +1,6 @@
 package com.kkoser.emulatorcore.gpu
 
+import com.kkoser.emulatorcore.checkBit
 import com.kkoser.emulatorcore.getBit
 import java.lang.RuntimeException
 import kotlin.math.abs
@@ -99,8 +100,8 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
             }
         }
 
-        return 0
-//        throw RuntimeException("Trying to read from vram outside of v-blank")
+//        return 0
+        throw RuntimeException("Trying to read from vram outside of v-blank")
     }
 
     fun write(location: Int, value: Int) {
@@ -118,7 +119,7 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
                 }
             }
         } else {
-//            throw RuntimeException("trying to write to vramoutside vblank")
+            throw RuntimeException("trying to write to vramoutside vblank")
         }
     }
 
@@ -149,8 +150,20 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
         val yStart = (line + lcd.scrollY) % 255 // wrap around the window if needed
         val xStart = lcd.scrollX
 
+        if (isBackgroundEnabled()) {
+            drawBackground(yStart, xStart, line)
+        }
 //        println("Starting lcd transfer for line with scrolly y ${lcd.scrollY} -> $yStart x $xStart")
 
+
+
+        // Only update the map on the first draw, as it draws the entire map independently of the current scan line
+        if (line == 0) {
+            renderDebugTiles()
+        }
+    }
+
+    private fun drawBackground(yStart: Int, xStart: Int, line: Int) {
         // We get the whole map, but the actual screen is 160x144, or 20x18 tiles
         val backgroundMap = getBackgroundMap()
 
@@ -184,11 +197,6 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
 
         // request new line be shown on screen
         renderer.refresh()
-
-        // Only update the map on the first draw, as it draws the entire map independently of the current scan line
-        if (line == 0) {
-            renderDebugTiles()
-        }
     }
 
     fun renderDebugTiles() {
@@ -236,5 +244,24 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
         }
 
         return ret
+    }
+
+    private fun isBackgroundEnabled(): Boolean {
+        return lcd.control.checkBit(0)
+    }
+
+    private fun getBackgroundMapBase(): Int {
+        return if (lcd.control.checkBit(3))
+            5
+        else
+            5
+    }
+
+    private fun isOAMEnaabled(): Boolean {
+        return lcd.control.checkBit(1)
+    }
+
+    private fun isWindowEnabled(): Boolean {
+        return lcd.control.checkBit(5)
     }
 }

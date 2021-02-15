@@ -1,7 +1,5 @@
 package com.kkoser.emulatorcore.cpu
 
-import com.kkoser.emulatorcore.toHexString
-
 interface InterruptHandler {
 
     /**
@@ -59,19 +57,16 @@ class DefaultInterruptHandler : InterruptHandler {
     }
 
     override fun handleInterrupts(cpu: Cpu) {
-        if (!cpu.ime) {
-            // Clear all the pending interrupts since we arent going to service them anyway
-            // TODO: Is this the correct approach? if so refactor to not do this all time, but to just not accept interrupts
-            // according to pan docs, flags will wait to be serviced:
-            // http://bgb.bircd.org/pandocs.htm#interrupts
-            return
-        }
-
         InterruptHandler.Interrupt.values().forEach { value ->
             if (registerIF and value.mask() == value.mask()) {
+                cpu.halted = false
                 if (registerIE and value.mask() == value.mask()) {
-                    clearInterrupt(value)
-                    cpu.interrupt(value)
+                    // according to pan docs, flags will wait to be serviced:
+                    // http://bgb.bircd.org/pandocs.htm#interrupts
+                    if (cpu.ime) {
+                        clearInterrupt(value)
+                        cpu.interrupt(value)
+                    }
                 }
             }
         }
@@ -89,7 +84,6 @@ class DefaultInterruptHandler : InterruptHandler {
 // CPU Interrupt handler methods
 
 fun Cpu.interrupt(interrupt: InterruptHandler.Interrupt) {
-    System.out.println("CPU interrupting: ${interrupt.location.toHexString()}")
     ime = false
     push(pc)
     pc = interrupt.location

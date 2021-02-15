@@ -110,7 +110,10 @@ class Lcd {
             if (currentScanLine == V_BLANK_START_LINE && mode != Mode.V_BLANK) {
                 setMode(Mode.V_BLANK, interruptHandler)
                 currentLineCycles = currentModeCycles
-                interruptHandler.interrupt(InterruptHandler.Interrupt.V_BLANK)
+                // This timing is off - the interrupts test from blarg (02-interrupt) fails if this is
+                // on, due to the VBLANK interrupt happening and then IME never getting turned back on
+                // with RETI or similar
+//                interruptHandler.interrupt(InterruptHandler.Interrupt.V_BLANK)
             }
         }
 

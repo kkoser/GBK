@@ -199,7 +199,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                 // IO ports
                 when(position) {
                     0xFF01 -> {
-//                        print("${value.toChar()}")
+                        print("${value.toChar()}")
 //                         TODO: Implement serial
                         // no-op, serial
 //                        TODO("Implement serial")
@@ -216,7 +216,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                     }
                     0xFF05 -> {
                         // Timer value
-                        throw RuntimeException("Trying to write the timer value")
+                        timer.count = value.toUnsigned8BitInt()
                     }
                     0xFF06 -> {
                         // Timer modulator

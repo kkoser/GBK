@@ -40,7 +40,7 @@ object OpCodes {
             0x0E to Operation(2, 8, "LD C,d8", { cpu -> cpu.loadImmediate8(Registers.Bit8.C) }),
             0x0F to Operation(1, 4, "RRCA", { cpu -> cpu.rrc(Registers.Bit8.A, true) }),
 
-            0x10 to Operation(2, 4, "STOP 0", { cpu -> cpu.halted = true }),
+            0x10 to Operation(2, 4, "STOP 0", { cpu -> cpu.halt() }),
             0x11 to Operation(3, 12, "LD DE,d16", { cpu -> cpu.loadImmediate16(Registers.Bit16.DE) }),
             0x12 to Operation(1, 8, "LD (DE),A", { cpu -> cpu.loadRegisterIntoIndirectLocation(Registers.Bit16.DE, Registers.Bit8.A) }),
             0x13 to Operation(1, 8, "INC DE", { cpu -> cpu.increment16(Registers.Bit16.DE) }),

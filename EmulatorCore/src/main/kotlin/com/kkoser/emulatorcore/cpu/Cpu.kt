@@ -7,14 +7,14 @@ import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toIntWithLowerInt
 import com.kkoser.emulatorcore.toUnsigned16BitInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
-import jdk.internal.org.objectweb.asm.Opcodes
-import jdk.nashorn.internal.runtime.regexp.joni.constants.OPCode
-import java.util.logging.Level
-import java.util.logging.Logger
 
 public var forceLineTo0 = false
 
-class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
+open class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
+
+    companion object {
+        public var loggingEnabled = false
+    }
     // These values need to be internal so they can be accessed and modified from the extension methods
     internal val registers = Registers()
     internal var pc = 0x00
@@ -40,7 +40,6 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
      */
     fun tick(): Int {
         if (halted) {
-            Thread.sleep(1000)
             return 0
         }
         ticks++
@@ -55,6 +54,10 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         var usePrefixOpcodes = false
         val oldPc = pc
         var opcode = memory.read(pc)
+
+        if (opcode == 0xC7) {
+            println("resetting to 0 with pc: ${pc.toHexString()}")
+        }
         if (opcode == 0xCB) {
             // TODO: Are there any prefixes that read values past current PC? Don't think so
             // If there are, this may break things
@@ -76,14 +79,14 @@ class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
         if (operation == null) {
             throw IllegalArgumentException("Unsupported operation type: " + Integer.toHexString(memory.read(oldPc)))
         }
-        if (ticks % 1 == 0) {
-//            System.out.println("total ticks $ticks, cycles:$cycleCount")
-            if (pc >= 0x100) {
-//                printDebugState(operation)
+
+        if (pc >= 0x100) {
+            if (loggingEnabled) {
+                printDebugState(operation)
             }
         }
 
-        operation.operation(this)
+        operation.operator(this)
 
 //        if (pc == 0x282a) {
 //            throw RuntimeException("filling vram?")
