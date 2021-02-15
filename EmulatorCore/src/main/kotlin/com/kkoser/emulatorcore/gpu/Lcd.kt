@@ -68,9 +68,6 @@ class Lcd {
 
     private var currentModeCycles = 0
 
-    // Used only for counting lines when in v-blank mode
-    private var currentLineCycles = 0
-
     fun tick(cyclesTaken: Int, interruptHandler: InterruptHandler) {
         if (!enabled()) {
             return
@@ -88,8 +85,17 @@ class Lcd {
                     setMode(Mode.H_BLANK, interruptHandler)
                 }
                 Mode.H_BLANK -> {
-                    setMode(Mode.OAM_SEARCH, interruptHandler)
-                    setCurrentLine(currentScanLine + 1, interruptHandler)
+                    if (currentScanLine == V_BLANK_START_LINE - 1) {
+                        setMode(Mode.V_BLANK, interruptHandler)
+                        setCurrentLine(currentScanLine + 1, interruptHandler)
+                        // This timing is off - the interrupts test from blarg (02-interrupt) fails if this is
+                        // on, due to the VBLANK interrupt happening and then IME never getting turned back on
+                        // with RETI or similar
+                        interruptHandler.interrupt(InterruptHandler.Interrupt.V_BLANK)
+                    } else {
+                        setMode(Mode.OAM_SEARCH, interruptHandler)
+                        setCurrentLine(currentScanLine + 1, interruptHandler)
+                    }
                 }
                 Mode.V_BLANK -> {
                     // We stay in V_BLANK for mutliple lines, so check if we're moving to a new line of V_BLANK
@@ -97,31 +103,14 @@ class Lcd {
                     // TODO: Do we need to correctly increment current line during v-blank?
                     // YES WE DO - IMPLEMENT THIS
                     if (currentScanLine < LINE_COUNT) {
-//                        setCurrentLine(currentScanLine + 1, interruptHandler)
+                        setCurrentLine(currentScanLine + 1, interruptHandler)
                     } else {
                         setCurrentLine(0, interruptHandler)
                         setMode(Mode.OAM_SEARCH, interruptHandler)
-                        // TODO: This is not perfectly accurate, we're potentially dropping a couple cycles that could  cause the next vblank to be longer...
-                        currentLineCycles = 0
+//                        // TODO: This is not perfectly accurate, we're potentially dropping a couple cycles that could  cause the next vblank to be longer...
+//                        currentLineCycles = 0
                     }
                 }
-            }
-
-            if (currentScanLine == V_BLANK_START_LINE && mode != Mode.V_BLANK) {
-                setMode(Mode.V_BLANK, interruptHandler)
-                currentLineCycles = currentModeCycles
-                // This timing is off - the interrupts test from blarg (02-interrupt) fails if this is
-                // on, due to the VBLANK interrupt happening and then IME never getting turned back on
-                // with RETI or similar
-//                interruptHandler.interrupt(InterruptHandler.Interrupt.V_BLANK)
-            }
-        }
-
-        if (mode == Mode.V_BLANK) {
-            currentLineCycles += cyclesTaken
-            if (currentLineCycles >= SINGLE_LINE_CYCLES) {
-                currentLineCycles -= SINGLE_LINE_CYCLES
-                setCurrentLine(currentScanLine + 1, interruptHandler)
             }
         }
     }

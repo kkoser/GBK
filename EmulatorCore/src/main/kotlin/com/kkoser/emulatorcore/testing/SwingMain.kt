@@ -49,7 +49,7 @@ object SwingMain {
             Thread {
 
 //                val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
-//                val gameFile = File("/Users/kkoser/Downloads/Dr. Mario (World).gb")
+                val gameFile = File("/Users/kkoser/Downloads/Dr. Mario (World).gb")
 //                val gameFile = File("/Users/kkoser/Downloads/Kirby's Dream Land (USA, Europe).gb")
 //                val gameFile = File("/Users/kkoser/Downloads//Pokemon Red (U) [S][BF].gb") // prints invalid character
 //                val gameFile = File("/Users/kkoser/Downloads/01-special.gb") // PASS
@@ -65,7 +65,7 @@ object SwingMain {
 //                val gameFile = File("/Users/kkoser/Projects/gb-test-roms/cpu_instrs/individual/02-interrupts.gb") // PASS
 //                val gameFile = File("/Users/kkoser/Downloads/daa.gb") // FAIL with weird graphics issues
 //                val gameFile = File("/Users/kkoser/Projects/gb-test-roms/cpu_instrs/source/test.gb")
-                val gameFile = File("/Users/kkoser/Projects/gb-test-roms/cpu_instrs/cpu_instrs.gb")
+//                val gameFile = File("/Users/kkoser/Projects/gb-test-roms/cpu_instrs/cpu_instrs.gb")
 
                 val rom = BasicROM(gameFile.inputStream())
                 val timer = Timer()

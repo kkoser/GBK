@@ -43,14 +43,14 @@ class DefaultInterruptHandler : InterruptHandler {
      * Interrupt enable register - controls whether an interrupt type is turned on
      */
     override var registerIE = 0b00000
-        set(value) {
-            field = value or 0xE1
-        }
 
     /**
      * Interrupt Request Register- lists what interrupts are pending processing currently
      */
     override var registerIF = 0b00000
+    set(value) {
+        field = value or 0b11100000
+    }
 
     override fun interrupt(interrupt: InterruptHandler.Interrupt) {
         registerIF = registerIF or interrupt.mask()
