@@ -40,7 +40,7 @@ open class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
      */
     fun tick(): Int {
         if (halted) {
-            return 0
+            return 4
         }
         ticks++
 

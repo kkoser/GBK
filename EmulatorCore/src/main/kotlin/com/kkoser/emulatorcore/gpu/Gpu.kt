@@ -119,7 +119,7 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
                 }
             }
         } else {
-            throw RuntimeException("trying to write to vramoutside vblank")
+//            throw RuntimeException("trying to write to vramoutside vblank")
         }
     }
 
