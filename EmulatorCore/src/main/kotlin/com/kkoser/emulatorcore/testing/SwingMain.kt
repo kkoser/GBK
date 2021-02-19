@@ -66,6 +66,7 @@ object SwingMain {
 //                val gameFile = File("/Users/kkoser/Downloads/daa.gb") // FAIL with weird graphics issues
 //                val gameFile = File("/Users/kkoser/Projects/gb-test-roms/cpu_instrs/source/test.gb")
 //                val gameFile = File("/Users/kkoser/Projects/gb-test-roms/cpu_instrs/cpu_instrs.gb")
+//                val gameFile = File("/Users/kkoser/Downloads/dmg-acid2.gb")
 
                 val rom = BasicROM(gameFile.inputStream())
                 val timer = Timer()

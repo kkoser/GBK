@@ -5,6 +5,16 @@ fun Byte.toUnsignedInt(): Int = (this.toInt() and 0xFF)
 fun Int.toUnsigned8BitInt(): Int = (this and 0xFF)
 fun Int.toUnsigned16BitInt(): Int = (this and 0xFFFF)
 
+fun Int.toSigned8BitInt(): Int {
+    val signBit = checkBit(7)
+    val absValue = this.toUnsigned8BitInt() and 0b01111111
+    if (signBit) {
+        return this - 0x100
+    }
+
+    return absValue
+}
+
 fun Int.toIntWithLowerInt(lowerInt: Int): Int {
     return ((this.toUnsigned8BitInt() shl 8) or lowerInt.toUnsigned8BitInt()).toUnsigned16BitInt()
 }

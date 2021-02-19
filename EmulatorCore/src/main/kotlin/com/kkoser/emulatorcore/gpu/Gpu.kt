@@ -2,8 +2,11 @@ package com.kkoser.emulatorcore.gpu
 
 import com.kkoser.emulatorcore.checkBit
 import com.kkoser.emulatorcore.getBit
+import com.kkoser.emulatorcore.toSigned8BitInt
 import java.lang.RuntimeException
 import kotlin.math.abs
+
+private val VRAM_START = 0x8000
 
 data class Color(val red: Int, val green: Int, val blue: Int) {
     companion object{
@@ -223,15 +226,23 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
 
     private fun getTileFromId(id: Int): Tile {
         // Each tile is 16 bytes in memory
-        val offset = id * 16
-//        val useNormalMap = lcd.status.checkBit(6)
+        // Subtract VRAM_START because we arent going through the databus
+        if (lcd.control.checkBit(4)) {
+            // The base for tiles here is 0x8000, which is also the start of VRAM
+            // Since we arent going through the memory bus, this washes out when we access VRAM
+            val offset = (id * 16)
+            return Tile(id, vram.sliceArray(IntRange(offset, offset + 15)))
+        }
+
+        // We're in the 8800 base mode, so the value is now signed
+        val offset = (id.toSigned8BitInt() * 16) + 0x9000 - VRAM_START
         return Tile(id, vram.sliceArray(IntRange(offset, offset + 15)))
     }
 
     // TODO: Support different map modes (bg vs window)
     private fun getBackgroundMap(): Array<Array<Int>> {
         // Subtract the start of VRAM since we aren't going through the memorybus for this
-        val BG_START = 0x9800 - 0x8000
+        val BG_START = getBackgroundMapBase() - VRAM_START
         val BG_LENGTH = 32
 
         val ret = Array<Array<Int>>(32) {Array(32) {0}}
@@ -252,9 +263,9 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
 
     private fun getBackgroundMapBase(): Int {
         return if (lcd.control.checkBit(3))
-            5
+            0x9C00
         else
-            5
+            0x9800
     }
 
     private fun isOAMEnaabled(): Boolean {
