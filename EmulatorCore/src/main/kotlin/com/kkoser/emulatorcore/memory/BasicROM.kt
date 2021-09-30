@@ -1,25 +1,20 @@
 package com.kkoser.emulatorcore.memory
 
+import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toUnsigned8BitInt
 import java.io.File
 import java.io.InputStream
 import java.util.logging.Level
 import java.util.logging.Logger
 
-class BasicROM(file: InputStream) : CartridgeMemory {
-    private val memory: Array<Int>
-    private val ram: Array<Int>
-
-    init {
-        val bytes = file.readBytes()
-        memory = Array(bytes.size, { i: Int -> bytes[i].toInt() })
-        ram = Array(0xBFFF-0xA000) {0}
-    }
+class BasicROM(bytes: ByteArray) : CartridgeMemory {
+    private val memory: Array<Int> = Array(bytes.size, { i: Int -> bytes[i].toInt() })
 
     override fun read(position: Int): Int {
         if (position >= 0xA000) {
-            return ram[position-0xA000].toUnsigned8BitInt()
+            return 0xFF
         }
+
         return memory[position].toUnsigned8BitInt()
     }
 

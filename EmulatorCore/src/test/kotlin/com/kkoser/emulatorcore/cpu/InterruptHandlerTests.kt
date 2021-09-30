@@ -6,6 +6,7 @@ import com.kkoser.emulatorcore.gpu.Dma
 import com.kkoser.emulatorcore.gpu.Gpu
 import com.kkoser.emulatorcore.gpu.Lcd
 import com.kkoser.emulatorcore.gpu.NoOpRenderer
+import com.kkoser.emulatorcore.io.Joypad
 import com.kkoser.emulatorcore.memory.MemoryBus
 import com.nhaarman.mockitokotlin2.mock
 import org.junit.Test
@@ -18,7 +19,8 @@ class InterruptHandlerTests {
     val testMemory = TestMemory()
     val dma = Dma()
     val gpu = Gpu(lcd, NoOpRenderer())
-    val memory = MemoryBus(testMemory, timer, handler, lcd, dma, gpu)
+    val joyPad = Joypad(handler)
+    val memory = MemoryBus(testMemory, timer, handler, lcd, dma, gpu, joyPad)
     val cpu = Cpu(memory, false)
 
     @Test

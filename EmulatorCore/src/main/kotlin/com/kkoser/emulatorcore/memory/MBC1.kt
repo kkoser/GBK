@@ -3,13 +3,13 @@ package com.kkoser.emulatorcore.memory
 import com.kkoser.emulatorcore.toUnsignedInt
 import java.io.File
 
-class MBC1(val file: File) : CartridgeMemory {
+class MBC1(bytes: ByteArray) : CartridgeMemory {
 
     companion object {
         const val BANK_DIVIDE = 0x4000
     }
 
-    private val fullMemory: Array<Int>
+    private val fullMemory: Array<Int> = Array(bytes.size, { i: Int -> bytes[i].toUnsignedInt() })
     private var selectedBank: Int = 1
     set(value) {
         // Need to handle these custom values that map to something different
@@ -19,11 +19,6 @@ class MBC1(val file: File) : CartridgeMemory {
         if (value == 0x60) field = 0x61
 
         field = value
-    }
-
-    init {
-        val bytes = file.readBytes()
-        fullMemory = Array(bytes.size, { i: Int -> bytes[i].toUnsignedInt() })
     }
 
     override fun read(position: Int): Int {

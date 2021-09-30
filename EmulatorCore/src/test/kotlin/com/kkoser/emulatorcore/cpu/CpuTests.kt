@@ -7,6 +7,7 @@ import com.kkoser.emulatorcore.gpu.Dma
 import com.kkoser.emulatorcore.gpu.Gpu
 import com.kkoser.emulatorcore.gpu.Lcd
 import com.kkoser.emulatorcore.gpu.NoOpRenderer
+import com.kkoser.emulatorcore.io.Joypad
 import com.kkoser.emulatorcore.memory.MemoryBus
 import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toUnsigned8BitInt
@@ -22,7 +23,8 @@ class CpuTests {
     val lcd = Lcd()
     val dma = Dma()
     val gpu = Gpu(lcd, NoOpRenderer())
-    val memory = MemoryBus(testMemory, timer, interruptHandler, lcd, dma, gpu)
+    val joypad = Joypad(interruptHandler)
+    val memory = MemoryBus(testMemory, timer, interruptHandler, lcd, dma, gpu, joypad)
     val cpu = Cpu(memory, false)
 
     @Before

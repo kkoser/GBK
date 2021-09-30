@@ -33,6 +33,15 @@ class Lcd {
         Bit 0: BG Display                     (0=Off, 1=On)
      */
     var control = 0 // display defaults to on?
+        set(value) {
+            // Check if we're disabling the LCD
+            if (field.checkBit(7) && !value.checkBit(7)) {
+                // We're disabling the lcd
+                disableLcd()
+            }
+
+            field = value
+        }
 
     /** This is the big one - the LCD status regsiter. It's lower bits are read only,
      * but the higher ones are r/w so the game can enable specific lcd interrupts
@@ -59,9 +68,9 @@ class Lcd {
 
     var lineCompare = 0
 
-    var currentScanLine = 2
+    var currentScanLine = 0
         @TestOnly set
-    var mode: Mode = Mode.OAM_SEARCH
+    var mode: Mode = Mode.H_BLANK
         @TestOnly set
 
     var modeListener: ((Mode) -> Unit)? = null
@@ -148,7 +157,15 @@ class Lcd {
         currentScanLine = 0
     }
 
+    fun disableLcd() {
+        currentModeCycles = 0
+        currentScanLine = 0
+        mode = Mode.OAM_SEARCH
+    }
+
     fun enabled(): Boolean {
-        return control.checkBit(7)
+        val enabled = control.checkBit(7)
+//        if (!enabled) println("LCD is disabled")
+        return enabled
     }
 }

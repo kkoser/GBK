@@ -44,6 +44,20 @@ fun Int.checkBit(bit: Int): Boolean {
     return ((1 shl bit) and this) > 0
 }
 
+fun Int.setBit(bit: Int, reset: Boolean = false): Int {
+    if (reset) {
+         return resetBit(bit)
+    } else {
+        val mask = 1 shl bit
+        return this or mask
+    }
+}
+
+fun Int.resetBit(bit: Int): Int {
+    val mask = (1 shl bit).inv()
+    return this and mask
+}
+
 fun Int.getBit(bit: Int): Int {
     return ((1 shl bit) and this) ushr (bit)
 }

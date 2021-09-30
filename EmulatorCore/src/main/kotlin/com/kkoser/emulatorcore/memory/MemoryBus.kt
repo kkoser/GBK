@@ -1,6 +1,7 @@
 package com.kkoser.emulatorcore.memory
 
 import com.kkoser.emulatorcore.Timer
+import com.kkoser.emulatorcore.cpu.Cpu
 import com.kkoser.emulatorcore.cpu.InterruptHandler
 import com.kkoser.emulatorcore.cpu.LDH_OFFSET
 import com.kkoser.emulatorcore.gpu.Dma
@@ -9,6 +10,7 @@ import com.kkoser.emulatorcore.gpu.Lcd
 import com.kkoser.emulatorcore.toHexString
 import com.kkoser.emulatorcore.toUnsigned8BitInt
 import com.kkoser.emulatorcore.cpu.forceLineTo0
+import com.kkoser.emulatorcore.io.Joypad
 import java.util.logging.Level
 import java.util.logging.Logger
 
@@ -27,7 +29,7 @@ Memory sections:
     FF80-FFFE High RAM (HRAM)
     FFFF Interrupt Enable Register
  */
-class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler: InterruptHandler, lcd: Lcd, val dma: Dma, val gpu: Gpu) {
+class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler: InterruptHandler, lcd: Lcd, val dma: Dma, val gpu: Gpu, private val joyPad: Joypad) {
     private val cartridgeMemory = cartridgeMemory
     private val timer = timer
     private val interruptHandler = interruptHandler
@@ -35,6 +37,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
     private val internalRam = Array(8192, {0})
     private val hram = Array(127, {0})
     private var bootRomEnabled = true
+    private var hackyShitLastChar: String = ""
     fun read(position: Int): Int {
 //        if (position > LDH_OFFSET)
 //            println("reading at position ${position.toHexString()}")
@@ -83,6 +86,10 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
             in 0xFF00..0xFF7F -> {
                 // IO ports
                 when(position) {
+                    0xFF00 -> {
+                        // Joypad
+                        return joyPad.memoryValue
+                    }
                     0xFF04 -> {
                         return timer.dividerCount
                     }
@@ -198,8 +205,27 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
             in 0xFF00..0xFF7F -> {
                 // IO ports
                 when(position) {
+                    0xFF00 -> {
+                        // joypad
+
+                    }
                     0xFF01 -> {
-                        print("${value.toChar()}")
+                        if (hackyShitLastChar.endsWith("ok")) {
+                            // Sttart the breakpoint
+                            hackyShitLastChar = ""
+                        }
+                        if (hackyShitLastChar.endsWith("04:o") && "${value.toChar()}" == "k") {
+                            print("teeset 11 just finished\n")
+//                            Cpu.Companion.loggingEnabled = true
+                        }
+                        hackyShitLastChar += "${value.toChar()}"
+//                        print(hackyShitLastChar)
+
+//                        if (hackyShitLastChar.endsWith("05:ok") && Cpu.Companion.loggingEnabled) {
+//                            throw RuntimeException("farts")
+//                        }
+
+
 //                         TODO: Implement serial
                         // no-op, serial
 //                        TODO("Implement serial")

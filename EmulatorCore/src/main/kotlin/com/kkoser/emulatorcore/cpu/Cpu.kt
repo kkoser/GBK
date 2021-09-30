@@ -145,7 +145,7 @@ open class Cpu constructor(memory: MemoryBus, debug: Boolean = true) {
 
 
 
-        println(String.format("AF=%04x, BC=%04x, DE=%04x, HL=%04x, SP=%04x, PC=%04x, %s, %s", af, bc, de, hl, sp, pc, flags.toString(), operation.title))
+        println(String.format("AF=%04x, BC=%04x, DE=%04x, HL=%04x, SP=%04x, PC=%04x, %s, %s", af, bc, de, hl, sp, pc, flags.toString(), operation.title(this)))
 
     }
 
@@ -247,6 +247,35 @@ class Registers {
 
         set(register.high, value.getHigh8Bits())
         set(register.low, value.getLow8Bits())
+    }
+
+    override fun toString(): String {
+        val af = get(Registers.Bit16.AF)
+        val bc = get(Registers.Bit16.BC)
+        val de = get(Registers.Bit16.DE)
+        val hl = get(Registers.Bit16.HL)
+        val sp = get(Registers.Bit16.SP)
+
+        fun checkFlag(flag: Cpu.Flag): Boolean {
+            return get(Registers.Bit8.F) and flag.mask > 0
+        }
+
+        fun getFlags(): String  {
+            val result = StringBuilder()
+            result.append(if (checkFlag(Cpu.Flag.Z)) 'Z' else '-')
+            result.append(if (checkFlag(Cpu.Flag.N)) 'N' else '-')
+            result.append(if (checkFlag(Cpu.Flag.H)) 'H' else '-')
+            result.append(if (checkFlag(Cpu.Flag.C)) 'C' else '-')
+            result.append("----")
+            return result.toString()
+        }
+
+        val flags = getFlags()
+
+
+
+        return (String.format("AF=%04x, BC=%04x, DE=%04x, HL=%04x, SP=%04x, %s", af, bc, de, hl, sp, flags.toString()))
+
     }
 }
 

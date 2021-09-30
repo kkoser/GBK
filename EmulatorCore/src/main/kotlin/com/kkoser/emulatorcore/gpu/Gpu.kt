@@ -156,9 +156,6 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
         if (isBackgroundEnabled()) {
             drawBackground(yStart, xStart, line)
         }
-//        println("Starting lcd transfer for line with scrolly y ${lcd.scrollY} -> $yStart x $xStart")
-
-
 
         // Only update the map on the first draw, as it draws the entire map independently of the current scan line
         if (line == 0) {

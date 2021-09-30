@@ -7,6 +7,7 @@ import com.kkoser.emulatorcore.gpu.Dma
 import com.kkoser.emulatorcore.gpu.Gpu
 import com.kkoser.emulatorcore.gpu.Lcd
 import com.kkoser.emulatorcore.gpu.NoOpRenderer
+import com.kkoser.emulatorcore.io.Joypad
 import com.kkoser.emulatorcore.memory.MemoryBus
 import org.junit.Test
 import org.junit.Assert.assertEquals
@@ -18,7 +19,8 @@ class TimerTests {
     val lcd = Lcd()
     val dma = Dma()
     val gpu = Gpu(lcd, NoOpRenderer())
-    val memory = MemoryBus(testMemory, timer, interruptHandler, lcd, dma, gpu)
+    val joyPad = Joypad(interruptHandler)
+    val memory = MemoryBus(testMemory, timer, interruptHandler, lcd, dma, gpu, joyPad)
 
     @Test
     fun overflowDividerAfter256Cycles() {
