@@ -3,6 +3,7 @@ package com.kkoser.emulatorcore.gpu
 import com.kkoser.emulatorcore.checkBit
 import com.kkoser.emulatorcore.getBit
 import com.kkoser.emulatorcore.toSigned8BitInt
+import com.kkoser.emulatorcore.toUnsigned8BitInt
 import java.lang.RuntimeException
 import kotlin.math.abs
 
@@ -117,7 +118,6 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
                 }
                 in 0xFE00..0xFE9F -> {
                     // OAM
-//                    throw RuntimeException("filling oam ram")
                     oamRam[location - 0xFE00] = value
                 }
             }
@@ -147,6 +147,23 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
         }
     }
 
+    data class Sprite(val id: Int, val x: Int, val y: Int, val tileId: Int, val pallette: Int) {
+        companion object {
+            // http://hisimon.dk/misc/pandocs/#vram-sprite-attribute-table-oam for details on sprite format
+            fun fromOamData(data: Array<Int>, id: Int): Sprite {
+                val offset = id * 4
+                val flags = data[offset + 3]
+                return Sprite(
+                    id = id,
+                    x = data[offset + 1] - 8,
+                    y = data[offset + 0] - 16,
+                    tileId = data[offset + 2],
+                    pallette = flags.getBit(4)
+                )
+            }
+        }
+    }
+
     private fun lcdTransfer(line: Int) {
         val scrollYTileShift = lcd.scrollY / 8
 
@@ -155,6 +172,10 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
 
         if (isBackgroundEnabled()) {
             drawBackground(yStart, xStart, line)
+        }
+
+        if (isOAMEnaabled()) {
+            drawSprites(line)
         }
 
         // Only update the map on the first draw, as it draws the entire map independently of the current scan line
@@ -170,20 +191,14 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
         // Determine the row of BG tiles that corresponds to the given line (keep in mind tiles are
         // all 8 lines tall)
         val tileNumber = yStart / 8
-//        println("Resolved to BG y location ${tileNumber.toHexString()}")
 
         // Fetch the row from the BG map, there are 20 tiles across the screen at a time
         val tileArr = backgroundMap[tileNumber].copyOfRange(xStart, xStart + 20)
 
         // Iterate over the row and get all the tiles at this level
         val tileValues = tileArr.map { tileId ->
-            if (tileId != 0 && tileId != 20) {
-//                println()
-            }
             getTileFromId(tileId)
         }
-
-//        println("Drawing line with tileids: ${tileArr.joinToString(postfix = ";")}")
 
         // Determine which part of the tile we want to draw for the given line (tiles are 8px tall)
         val lineInTile = yStart % 8
@@ -197,6 +212,28 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
 
         // request new line be shown on screen
         renderer.refresh()
+    }
+
+    fun drawSprites(line: Int) {
+        // First find the at most 10 sprites on this line
+        // Drop any sprites later in oam ram that would fit
+        val sprites = (0..39).map { Sprite.fromOamData(oamRam, it) }
+        val selectedSprites = sprites.filter { it.y < line && line < it.y + getSpriteHeight() && it.x > 0 && it.x < 160 }.take(10)
+
+        // Render in reverse order of x position - lower x position will draw over the higher ones
+        // TODO: In CGB (Color gameboy) mode this is reversed, support this
+        for (sprite in selectedSprites) {
+            // Draw the sprite
+            val spriteTile = getSpriteTileFromId(sprite.tileId)
+            val lineInTile = line - sprite.y
+            for (x in 0..7) {
+                val xPos = sprite.x + x
+                if (xPos < 1 || xPos > 160) {
+                    continue
+                }
+                renderer.render(sprite.x + x, line, spriteTile.getPixel(x, lineInTile, getSpritePallette(sprite)))
+            }
+        }
     }
 
     fun renderDebugTiles() {
@@ -219,6 +256,17 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
         }
 
         debugRenderer.refresh()
+    }
+
+    // In non-collor (CGB) mode, theres only one OAM bank
+    // TODO support bank switching for CGB mode
+    private fun getSpriteTileFromId(id: Int): Tile {
+        // Each tile is 16 bytes in memory
+        // Subtract VRAM_START because we arent going through the databus
+
+        // OAM sprites in non-color mode are always in 0x8000-0x8fff
+        val offset = (id.toUnsigned8BitInt() * 16)
+        return Tile(id, vram.sliceArray(IntRange(offset, offset + 15)))
     }
 
     private fun getTileFromId(id: Int): Tile {
@@ -263,6 +311,21 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
             0x9C00
         else
             0x9800
+    }
+
+    // Sprites are 8x8 or 8x16
+    private fun getSpriteHeight(): Int {
+        return if (lcd.control.checkBit(2))
+            throw RuntimeException("16 bit sprites not supported")
+        else
+            8
+    }
+
+    private fun getSpritePallette(sprite: Sprite): Int {
+        return if (sprite.pallette == 0)
+            obj0Pallete
+        else
+            obj1Pallete
     }
 
     private fun isOAMEnaabled(): Boolean {

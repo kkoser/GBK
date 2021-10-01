@@ -48,6 +48,10 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
         - map external ram also to ROM file
         - mirror empty part of ram to normal ram?
          */
+        // Cannot access anythin but hram when a dma transfer is haappening
+        if (dma.isWriting && position < 0xFF80) {
+            return 0xFF
+        }
         when(position) {
             in 0 until 0x8000 -> {
                 if (bootRomEnabled && position < 0x100) {
@@ -167,10 +171,11 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
     }
 
     fun write(position: Int, value: Int) {
-        if (position == 0xdd02) {
-//                    println("writing value ${value.toHexString()} to position ${position.toHexString()}")
+
+        if (dma.isWriting && position < 0xFF80) {
+            return
         }
-//        println("writing value ${value.toHexString()} to position ${position.toHexString()}")
+
         when(position) {
             in 0..0x8000 -> {
                 cartridgeMemory.write(position, value)
@@ -287,7 +292,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                         lcd.lineCompare = value
                     }
                     0xFF46 -> {
-                        dma.write(value, this)
+                        dma.write(value)
                     }
 
                     // region GPU

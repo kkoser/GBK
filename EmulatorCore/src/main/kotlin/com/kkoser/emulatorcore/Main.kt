@@ -30,7 +30,7 @@ fun main(vararg args: String) {
     val joyPad = Joypad(interruptHandler)
     val memoryBus = MemoryBus(rom, timer, interruptHandler, lcd, dma, gpu, joyPad)
     val cpu = Cpu(memoryBus, true)
-    val emulator = Emulator(cpu, memoryBus, interruptHandler, timer, lcd)
+    val emulator = Emulator(cpu, memoryBus, interruptHandler, timer, lcd, dma)
 
     try {
         emulator.run()

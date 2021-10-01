@@ -53,7 +53,7 @@ object SwingMain {
 
             Thread {
 
-                val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
+//                val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
 //                val gameFile = File("/Users/kkoser/Downloads/Dr. Mario (World).gb")
 //                val gameFile = File("/Users/kkoser/Downloads/Pokemon Trading Card Game (U) [C][!].gbc")
 //                val gameFile = File("/Users/kkoser/Downloads/Kirby's Dream Land (USA, Europe).gb")
@@ -72,7 +72,7 @@ object SwingMain {
 //                val gameFile = File("/Users/kkoser/Downloads/daa.gb") // FAIL with weird graphics issues
 //                val gameFile = File("/Users/kkoser/Projects/gb-test-roms/cpu_instrs/source/test.gb")
 //                val gameFile = File("/Users/kkoser/Projects/gb-test-roms/cpu_instrs/cpu_instrs.gb") // infinite increasing numbers?
-//                val gameFile = File("/Users/kkoser/Downloads/dmg-acid2.gb")
+                val gameFile = File("/Users/kkoser/Downloads/dmg-acid2.gb")
 //                val gameFile = File("/Users/kkoser/Downloads/mooneye/acceptance/bits/reg_f.gb")
 //                val gameFile = File("/Users/kkoser/Downloads/mooneye/emulator-only/mbc1/rom_512kb.gb")
 //                val gameFile = File("/Users/kkoser/Downloads/1-lcd_sync.gb")
@@ -86,7 +86,7 @@ object SwingMain {
                 val joyPad = Joypad(interruptHandler)
                 val memoryBus = MemoryBus(rom, timer, interruptHandler, lcd, dma, gpu, joyPad)
                 val cpu = Cpu(memoryBus, true)
-                val emulator = Emulator(cpu, memoryBus, interruptHandler, timer, lcd)
+                val emulator = Emulator(cpu, memoryBus, interruptHandler, timer, lcd, dma)
 
 
                 mainWindow.addKeyListener(object : KeyListener {
