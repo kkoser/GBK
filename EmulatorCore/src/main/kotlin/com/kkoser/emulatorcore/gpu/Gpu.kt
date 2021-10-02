@@ -4,6 +4,7 @@ import com.kkoser.emulatorcore.checkBit
 import com.kkoser.emulatorcore.getBit
 import com.kkoser.emulatorcore.toSigned8BitInt
 import com.kkoser.emulatorcore.toUnsigned8BitInt
+import org.jetbrains.annotations.Contract
 import java.lang.RuntimeException
 import kotlin.math.abs
 
@@ -16,7 +17,7 @@ data class Color(val red: Int, val green: Int, val blue: Int) {
         val DARK_GREY = Color(136,192,112)
         val BLACK = Color(255, 255, 255)
 
-        fun getColorFromGbId(id: Int, pallette: Int): Color {
+        fun getColorFromGbId(id: Int, pallette: Int): Color? {
             val decodedIdUpper = pallette.getBit(2*id + 1)
             val decodedIdLower = pallette.getBit(2*id)
             val decodedId = (decodedIdUpper shl 1) or decodedIdLower
@@ -127,17 +128,27 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
     }
 
     data class Tile(val id: Int, val values: Array<Int>) {
-        fun getPixel(x: Int, y: Int, pallette: Int): Color {
-            val upper = values[2*y]
-            val lower = values[(2*y)+1]
+        @Contract("_, _, _, false -> !null")
+                /**
+                 * Returns the color of the pixel with the given palette, if it is a transparent
+                 * pixel in a sprite returns null
+                 */
+        fun getPixel(x: Int, y: Int, pallette: Int, sprite: Boolean = false): Color? {
+            val upper = values[2 * y]
+            val lower = values[(2 * y) + 1]
 
-            val lowerColorBit = upper.getBit(abs(7-x))
-            val upperColorBit = lower.getBit(abs(7-x))
+            val lowerColorBit = upper.getBit(abs(7 - x))
+            val upperColorBit = lower.getBit(abs(7 - x))
 
             val colorValue = (upperColorBit shl 1) or lowerColorBit
 
+            // 00 in sprite palette is always transparent
+            if (colorValue == 0 && sprite) {
+                return null
+            }
+
             // Need to do the color decode
-            val lowerBitLocation = 2*colorValue
+            val lowerBitLocation = 2 * colorValue
             val higherBitLocation = lowerBitLocation + 1
             val lowerDecodedColor = pallette.getBit(lowerBitLocation)
             val higherDecodedColor = pallette.getBit(higherBitLocation)
@@ -170,69 +181,38 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
         val yStart = (line + lcd.scrollY) % 255 // wrap around the window if needed
         val xStart = lcd.scrollX
 
-        if (isBackgroundEnabled()) {
-            drawBackground(yStart, xStart, line)
-        }
+        val backgroundMap = getBackgroundMap()
+        val sprites = getSpritesForLine(line)
 
-        if (isOAMEnaabled()) {
-            drawSprites(line)
+        // Psuedoccode
+        // Find spritetes for line
+        // for x in line:
+        // Find sprite thatt draws there, if any
+        // If present and not transparent draw it
+        // else find bg pixel at that spot and draw it
+
+        for (x in 0 until 160) {
+            // Sprites are always 8 wide
+            val sprite = if (isOAMEnaabled()) sprites.find { it.x <= x && it.x + 8 > x } else null
+            if (sprite == null) {
+                if (isBackgroundEnabled()) {
+                    renderer.render(x, line, getBackgroundPixelAtLocation(line, x, backgroundMap))
+                }
+                continue
+            }
+            val spriteTile = getSpriteTileFromId(sprite.tileId)
+            val color = spriteTile.getPixel(x - sprite.x, line - sprite.y, getSpritePallette(sprite), true)
+            if (color == null) {
+                renderer.render(x, line, getBackgroundPixelAtLocation(line, x, backgroundMap))
+            } else if (isBackgroundEnabled()){
+                renderer.render(x, line, color)
+            }
         }
 
         // Only update the map on the first draw, as it draws the entire map independently of the current scan line
         if (line == 0) {
+            renderer.refresh()
             renderDebugTiles()
-        }
-    }
-
-    private fun drawBackground(yStart: Int, xStart: Int, line: Int) {
-        // We get the whole map, but the actual screen is 160x144, or 20x18 tiles
-        val backgroundMap = getBackgroundMap()
-
-        // Determine the row of BG tiles that corresponds to the given line (keep in mind tiles are
-        // all 8 lines tall)
-        val tileNumber = yStart / 8
-
-        // Fetch the row from the BG map, there are 20 tiles across the screen at a time
-        val tileArr = backgroundMap[tileNumber].copyOfRange(xStart, xStart + 20)
-
-        // Iterate over the row and get all the tiles at this level
-        val tileValues = tileArr.map { tileId ->
-            getTileFromId(tileId)
-        }
-
-        // Determine which part of the tile we want to draw for the given line (tiles are 8px tall)
-        val lineInTile = yStart % 8
-
-        // iterate over found tiles and request draws of correct pixels at this line
-        for ((index, tile) in tileValues.withIndex()) {
-            for (x in 0..7) {
-                renderer.render((8 * index) + x, line, tile.getPixel(x, lineInTile, bgPallete))
-            }
-        }
-
-        // request new line be shown on screen
-        renderer.refresh()
-    }
-
-    fun drawSprites(line: Int) {
-        // First find the at most 10 sprites on this line
-        // Drop any sprites later in oam ram that would fit
-        val sprites = (0..39).map { Sprite.fromOamData(oamRam, it) }
-        val selectedSprites = sprites.filter { it.y < line && line < it.y + getSpriteHeight() && it.x > 0 && it.x < 160 }.take(10)
-
-        // Render in reverse order of x position - lower x position will draw over the higher ones
-        // TODO: In CGB (Color gameboy) mode this is reversed, support this
-        for (sprite in selectedSprites) {
-            // Draw the sprite
-            val spriteTile = getSpriteTileFromId(sprite.tileId)
-            val lineInTile = line - sprite.y
-            for (x in 0..7) {
-                val xPos = sprite.x + x
-                if (xPos < 1 || xPos > 160) {
-                    continue
-                }
-                renderer.render(sprite.x + x, line, spriteTile.getPixel(x, lineInTile, getSpritePallette(sprite)))
-            }
         }
     }
 
@@ -250,12 +230,35 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
             val yOffset = (it.index / 16) * 8
             for (x in 0..7) {
                 for (y in 0..7) {
-                    debugRenderer.render(x + xOffset, y+ yOffset, it.value.getPixel(x, y, bgPallete))
+                    debugRenderer.render(x + xOffset, y+ yOffset, it.value.getPixel(x, y, bgPallete)!!)
                 }
             }
         }
 
         debugRenderer.refresh()
+    }
+
+    private fun getSpritesForLine(line: Int): List<Sprite> {
+        val allSprites = (0..39).map { Sprite.fromOamData(oamRam, it) }
+        return allSprites.filter { it.y < line && line < it.y + getSpriteHeight() && it.x > 0 && it.x < 160 }.take(10)
+    }
+
+    private fun getBackgroundPixelAtLocation(line: Int, x: Int, backgroundMap: Array<Array<Int>>): Color {
+        val yStart = (line + lcd.scrollY) % 255 // wrap around the window if needed
+        val xStart = (lcd.scrollX + x) % 255 // wrap around if needed
+        // Determine the row of BG tiles that corresponds to the given line (keep in mind tiles are
+        // all 8x8)
+        val tileRow = yStart / 8
+        val tileColumn = xStart / 8
+
+        // Fetch the row from the BG map, there are 20 tiles across the screen at a time
+        val tileId = backgroundMap[tileRow][tileColumn]
+        val tile = getTileFromId(tileId)
+
+        val xInTile = xStart % 8
+        val yInTile = yStart % 8
+        // bg cannot be transparent
+        return requireNotNull(tile.getPixel(xInTile, yInTile, bgPallete))
     }
 
     // In non-collor (CGB) mode, theres only one OAM bank
