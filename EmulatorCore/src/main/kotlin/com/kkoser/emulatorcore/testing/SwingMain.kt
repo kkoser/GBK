@@ -53,8 +53,8 @@ object SwingMain {
 
             Thread {
 
-//                val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
-                val gameFile = File("/Users/kkoser/Downloads/Dr. Mario (World).gb")
+                val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
+//                val gameFile = File("/Users/kkoser/Downloads/Dr. Mario (World).gb")
 //                val gameFile = File("/Users/kkosvier/Downloads/Pokemon Trading Card Game (U) [C][!].gbc")
 //                val gameFile = File("/Users/kkoser/Downloads/Kirby's Dream Land (USA, Europe).gb")
 //                val gameFile = File("/Users/kkoser/Downloads//Pokemon Red (U) [S][BF].gb") // prints invalid character

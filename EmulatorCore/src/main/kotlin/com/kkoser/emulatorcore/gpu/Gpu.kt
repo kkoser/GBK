@@ -17,7 +17,7 @@ data class Color(val red: Int, val green: Int, val blue: Int) {
         val DARK_GREY = Color(136,192,112)
         val BLACK = Color(255, 255, 255)
 
-        fun getColorFromGbId(id: Int, pallette: Int): Color? {
+        fun getColorFromGbId(id: Int, pallette: Int): Color {
             val decodedIdUpper = pallette.getBit(2*id + 1)
             val decodedIdLower = pallette.getBit(2*id)
             val decodedId = (decodedIdUpper shl 1) or decodedIdLower
@@ -147,18 +147,11 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
                 return null
             }
 
-            // Need to do the color decode
-            val lowerBitLocation = 2 * colorValue
-            val higherBitLocation = lowerBitLocation + 1
-            val lowerDecodedColor = pallette.getBit(lowerBitLocation)
-            val higherDecodedColor = pallette.getBit(higherBitLocation)
-            val colorId = (higherDecodedColor shl 1) or lowerDecodedColor
-
-            return Color.getColorFromGbId(colorId, pallette)
+            return Color.getColorFromGbId(colorValue, pallette)
         }
     }
 
-    data class Sprite(val id: Int, val x: Int, val y: Int, val tileId: Int, val pallette: Int) {
+    data class Sprite(val id: Int, val x: Int, val y: Int, val tileId: Int, val pallette: Int, val backgroundPriority: Int) {
         companion object {
             // http://hisimon.dk/misc/pandocs/#vram-sprite-attribute-table-oam for details on sprite format
             fun fromOamData(data: Array<Int>, id: Int): Sprite {
@@ -169,7 +162,8 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
                     x = data[offset + 1] - 8,
                     y = data[offset + 0] - 16,
                     tileId = data[offset + 2],
-                    pallette = flags.getBit(4)
+                    pallette = flags.getBit(4),
+                    backgroundPriority = flags.getBit(7)
                 )
             }
         }
