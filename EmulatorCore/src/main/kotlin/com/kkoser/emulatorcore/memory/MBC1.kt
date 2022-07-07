@@ -26,7 +26,7 @@ class MBC1(bytes: ByteArray) : CartridgeMemory {
             return fullMemory[position]
         }
 
-        val actualPosition = position + (selectedBank * BANK_DIVIDE)
+        val actualPosition = position + ((selectedBank - 1) * BANK_DIVIDE)
         return fullMemory[actualPosition]
 
     }

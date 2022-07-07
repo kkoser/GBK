@@ -22,7 +22,7 @@ class CpuTests {
     val interruptHandler = DefaultInterruptHandler()
     val lcd = Lcd()
     val dma = Dma()
-    val gpu = Gpu(lcd, NoOpRenderer())
+    val gpu = Gpu(lcd, NoOpRenderer)
     val joypad = Joypad(interruptHandler)
     val memory = MemoryBus(testMemory, timer, interruptHandler, lcd, dma, gpu, joypad)
     val cpu = Cpu(memory, false)

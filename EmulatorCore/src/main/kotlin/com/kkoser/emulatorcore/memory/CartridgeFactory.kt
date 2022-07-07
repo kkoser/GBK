@@ -55,6 +55,11 @@ object CartridgeFactory {
                 MBC1(bytes)
             }
 
+            CartridgeType.MBC3, CartridgeType.MBC3_RAM, CartridgeType.MBC3_RAM_BATTERY, CartridgeType.MBC3_TIMER_BATTERY, CartridgeType.MBC3_TIMER_RAM_BATTERY -> {
+                println("Creating MBC3 cartridge")
+                MBC3(bytes)
+            }
+
             else -> {
                 throw IllegalArgumentException("Unsupported rom type $type")
             }

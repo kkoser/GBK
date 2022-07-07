@@ -36,8 +36,8 @@ class Joypad(val interruptHandler: InterruptHandler) {
             return constructValue()
         }
         set(value) {
-            val selectButtons = value.checkBit(5)
-            val selectDirection = value.checkBit(4)
+            val selectButtons = !value.checkBit(5)
+            val selectDirection = !value.checkBit(4)
 
             if (selectButtons) {
                 // They want button info
@@ -51,27 +51,27 @@ class Joypad(val interruptHandler: InterruptHandler) {
         }
 
     fun aPressed(released: Boolean = false) {
-        aButtonDepressed = released
+        aButtonDepressed = !released
     }
 
     fun bPressed(released: Boolean = false) {
-        bButtonDepressed = released
+        bButtonDepressed = !released
     }
 
     fun startPressed(released: Boolean = false) {
-        startButtonDepressed = released
+        startButtonDepressed = !released
     }
 
     fun selectPressed(released: Boolean = false) {
-        selectButtonDepressed = released
+        selectButtonDepressed = !released
     }
 
     fun dpadPressed(direction: Direction, released: Boolean = false) {
         when(direction) {
-            Direction.UP -> upDepressed = released
-            Direction.DOWN -> downDepressed = released
-            Direction.LEFT -> leftDepressed = released
-            Direction.RIGHT -> rightDepressed = released
+            Direction.UP -> upDepressed = !released
+            Direction.DOWN -> downDepressed = !released
+            Direction.LEFT -> leftDepressed = !released
+            Direction.RIGHT -> rightDepressed = !released
         }
     }
 

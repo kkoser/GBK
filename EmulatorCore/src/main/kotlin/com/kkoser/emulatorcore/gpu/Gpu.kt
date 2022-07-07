@@ -1,11 +1,10 @@
 package com.kkoser.emulatorcore.gpu
 
-import com.kkoser.emulatorcore.checkBit
-import com.kkoser.emulatorcore.getBit
-import com.kkoser.emulatorcore.toSigned8BitInt
-import com.kkoser.emulatorcore.toUnsigned8BitInt
+import com.kkoser.emulatorcore.*
 import org.jetbrains.annotations.Contract
+import java.lang.IllegalArgumentException
 import java.lang.RuntimeException
+import java.lang.StringBuilder
 import kotlin.math.abs
 
 private val VRAM_START = 0x8000
@@ -38,9 +37,13 @@ interface Renderer {
     fun refresh()
 }
 
-class NoOpRenderer : Renderer {
+interface BackgroundInfoRenderer {
+    fun refresh()
+    fun drawBgInfo(bgInfo: String)
+}
+
+object NoOpRenderer : Renderer {
     override fun render(x: Int, y: Int, color: Color) {
-//        println( "Drawinng pixel at $x,$y with color ${color.red}")
     }
 
     override fun refresh() {
@@ -48,7 +51,7 @@ class NoOpRenderer : Renderer {
     }
 }
 
-class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = null) {
+class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = null, val bgRenderer: BackgroundInfoRenderer? = null) {
 
     init {
         lcd.modeListener = {
@@ -78,10 +81,6 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
     // OAM memory holds 40 sprites at 4 bytes each, so 160 bytes
     private val oamRam = Array(160, { 0 })
 
-    fun tick(cyclesTaken: Int) {
-
-    }
-
     fun read(location: Int): Int {
         // vram is accessible anytime other than transfer
         if (lcd.mode == Lcd.Mode.H_BLANK || lcd.mode == Lcd.Mode.OAM_SEARCH) {
@@ -110,29 +109,25 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
     }
 
     fun write(location: Int, value: Int) {
-//        throw RuntimeException("Writing to vram at location ${location.toHexString()}")
-        if (lcd.mode == Lcd.Mode.V_BLANK || !lcd.enabled()) {
-            when (location) {
-                in 0x8000..0x9FFF -> {
-                    vram[location - 0x8000] = value
-//                    if (value != 0) throw RuntimeException("writing vram at location ${location.toHexString()} value ${value.toHexString()}")
-                }
-                in 0xFE00..0xFE9F -> {
-                    // OAM
-                    oamRam[location - 0xFE00] = value
-                }
+        // Apparently its allowed to write to vram any time, if you add guards for only doing this
+        // in certain lcd modes, tetris will break when transfering placed tiles to the bg and not
+        // draw them
+        when (location) {
+            in 0x8000..0x9FFF -> {
+                vram[location - 0x8000] = value
             }
-        } else {
-//            throw RuntimeException("trying to write to vramoutside vblank")
+            in 0xFE00..0xFE9F -> {
+                // OAM
+                oamRam[location - 0xFE00] = value
+            }
         }
     }
 
     data class Tile(val id: Int, val values: Array<Int>) {
-        @Contract("_, _, _, false -> !null")
-                /**
-                 * Returns the color of the pixel with the given palette, if it is a transparent
-                 * pixel in a sprite returns null
-                 */
+        /**
+         * Returns the color of the pixel with the given palette, if it is a transparent
+         * pixel in a sprite returns null
+         */
         fun getPixel(x: Int, y: Int, pallette: Int, sprite: Boolean = false): Color? {
             val upper = values[2 * y]
             val lower = values[(2 * y) + 1]
@@ -167,23 +162,40 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
                 )
             }
         }
+
+        fun getTile(lineInSprite: Int, gpu: Gpu): Tile {
+            val height = gpu.getSpriteHeight()
+            if (lineInSprite >= height) {
+                throw IllegalArgumentException("Line $lineInSprite is outside the height $height of the sprite")
+            }
+
+            // See http://hisimon.dk/misc/pandocs/ -
+            // "Specifies the sprites Tile Number (00-FF). This (unsigned) value selects a tile from
+            // memory at 8000h-8FFFh. In CGB Mode this could be either in VRAM Bank 0 or 1,
+            // depending on Bit 3 of the following byte. In 8x16 mode, the lower bit of the tile
+            // number is ignored. Ie. the upper 8x8 tile is “NN AND FEh”, and the lower 8x8 tile is “NN OR 01h”."
+            if (height == 8) {
+                // Normal case
+                return gpu.getSpriteTileFromId(tileId)
+            } else {
+                // 16 height sprite, so there are two tiles
+                // We need to pick the relevant one
+                val id = if (height == 8) tileId and 0xFE else tileId or 0x01
+                return gpu.getSpriteTileFromId(id)
+            }
+        }
     }
 
     private fun lcdTransfer(line: Int) {
-        val scrollYTileShift = lcd.scrollY / 8
-
-        val yStart = (line + lcd.scrollY) % 255 // wrap around the window if needed
-        val xStart = lcd.scrollX
-
-        val backgroundMap = getBackgroundMap()
-        val sprites = getSpritesForLine(line)
-
         // Psuedoccode
         // Find spritetes for line
         // for x in line:
         // Find sprite thatt draws there, if any
         // If present and not transparent draw it
         // else find bg pixel at that spot and draw it
+        // TODO: Add background
+        val backgroundMap = getBackgroundMap()
+        val sprites = getSpritesForLine(line)
 
         for (x in 0 until 160) {
             // Sprites are always 8 wide
@@ -194,8 +206,11 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
                 }
                 continue
             }
+//            val spriteTile = sprite.getTile(line - sprite.y, this)
             val spriteTile = getSpriteTileFromId(sprite.tileId)
-            val color = spriteTile.getPixel(x - sprite.x, line - sprite.y, getSpritePallette(sprite), true)
+            val yPosInTile = line - sprite.y
+            val twoTileOffset = if (getSpriteHeight() == 16 && yPosInTile >= 8) -8 else 0
+            val color = spriteTile.getPixel(x - sprite.x, yPosInTile + twoTileOffset, getSpritePallette(sprite), true)
             if (color == null) {
                 renderer.render(x, line, getBackgroundPixelAtLocation(line, x, backgroundMap))
             } else if (isBackgroundEnabled()){
@@ -215,7 +230,7 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
             return
 
         val allTiles = (0..255).map {
-            getTileFromId(it)
+            getBackgroundTileFromId(it)
         }.toTypedArray()
 
         allTiles.withIndex().map {
@@ -230,11 +245,29 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
         }
 
         debugRenderer.refresh()
+
+        // BG map is 20x18
+        val sb = StringBuilder()
+        for (i in 0 until 20) {
+            for (j in 0 until 18) {
+                sb.append(String.format("%03d", getBackgroundMap()[i][j]))
+                sb.append(" ")
+            }
+            sb.append("\n")
+        }
+
+        bgRenderer?.let {
+            bgRenderer.drawBgInfo(sb.toString())
+            bgRenderer.refresh()
+        }
     }
 
     private fun getSpritesForLine(line: Int): List<Sprite> {
         val allSprites = (0..39).map { Sprite.fromOamData(oamRam, it) }
-        return allSprites.filter { it.y < line && line < it.y + getSpriteHeight() && it.x > 0 && it.x < 160 }.take(10)
+        return allSprites.filter { it.y <= line && line < it.y + getSpriteHeight() && it.x > 0 && it.x < 168 }
+            // Sort by x position since if sprites overlap, we use the lowest x val
+            .sortedBy { it.x }
+            .take(10)
     }
 
     private fun getBackgroundPixelAtLocation(line: Int, x: Int, backgroundMap: Array<Array<Int>>): Color {
@@ -247,7 +280,7 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
 
         // Fetch the row from the BG map, there are 20 tiles across the screen at a time
         val tileId = backgroundMap[tileRow][tileColumn]
-        val tile = getTileFromId(tileId)
+        val tile = getBackgroundTileFromId(tileId)
 
         val xInTile = xStart % 8
         val yInTile = yStart % 8
@@ -266,7 +299,7 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
         return Tile(id, vram.sliceArray(IntRange(offset, offset + 15)))
     }
 
-    private fun getTileFromId(id: Int): Tile {
+    private fun getBackgroundTileFromId(id: Int): Tile {
         // Each tile is 16 bytes in memory
         // Subtract VRAM_START because we arent going through the databus
         if (lcd.control.checkBit(4)) {
@@ -313,7 +346,7 @@ class Gpu(val lcd: Lcd, val renderer: Renderer, val debugRenderer: Renderer? = n
     // Sprites are 8x8 or 8x16
     private fun getSpriteHeight(): Int {
         return if (lcd.control.checkBit(2))
-            throw RuntimeException("16 bit sprites not supported")
+            16
         else
             8
     }

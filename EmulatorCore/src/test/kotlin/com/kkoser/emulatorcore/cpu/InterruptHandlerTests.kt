@@ -18,7 +18,7 @@ class InterruptHandlerTests {
     val timer = Timer()
     val testMemory = TestMemory()
     val dma = Dma()
-    val gpu = Gpu(lcd, NoOpRenderer())
+    val gpu = Gpu(lcd, NoOpRenderer)
     val joyPad = Joypad(handler)
     val memory = MemoryBus(testMemory, timer, handler, lcd, dma, gpu, joyPad)
     val cpu = Cpu(memory, false)

@@ -212,6 +212,7 @@ class MemoryBus(cartridgeMemory: CartridgeMemory, timer: Timer, interruptHandler
                 when(position) {
                     0xFF00 -> {
                         // joypad
+                        joyPad.memoryValue = value
 
                     }
                     0xFF01 -> {

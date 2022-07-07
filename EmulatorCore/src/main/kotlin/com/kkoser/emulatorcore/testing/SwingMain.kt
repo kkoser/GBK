@@ -51,13 +51,21 @@ object SwingMain {
             vramWindow.isVisible = true
             vramWindow.setSize(256, 256)
 
+            val bgWindow = TileDisplay()
+            bgWindow.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
+            debugDisplay.setSize(256, 256)
+            bgWindow.isVisible = true
+            bgWindow.setSize(256, 256)
+
             Thread {
 
-                val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
-//                val gameFile = File("/Users/kkoser/Downloads/Dr. Mario (World).gb")
-//                val gameFile = File("/Users/kkosvier/Downloads/Pokemon Trading Card Game (U) [C][!].gbc")
+//                val gameFile = File("/Users/kkoser/Projects/GBK/test.gb")
+//                val gameFile = File("/Users/kkoser/Downloads/Pokemon - Red Version (UE)[!]/Pokemon Red.gb")
+                val gameFile = File("/Users/kkoser/Downloads/Dr. Mario (World).gb")
+//                val gameFile = File("/Users/kkoser/Downloads/Pokemon Trading Card Game (U) [C][!].gbc")
 //                val gameFile = File("/Users/kkoser/Downloads/Kirby's Dream Land (USA, Europe).gb")
 //                val gameFile = File("/Users/kkoser/Downloads//Pokemon Red (U) [S][BF].gb") // prints invalid character
+//                val gameFile = File("/Users/kkoser/Downloads/Pokemon - Silver Version (UE) [C][!].gbc") // prints invalid character
 //                val gameFile = File("/Users/kkoser/Downloads/01-special.gb") // PASS
 //                val gameFile = File("/Users/kkoser/Downloads/06-ld r,r.gb") // PASS
 //                val gameFile = File("/Users/kkoser/Downloads/10-bit ops.gb") // PASS
@@ -80,7 +88,7 @@ object SwingMain {
                 val rom = CartridgeFactory.getCartridgeForFile(gameFile)
                 val timer = Timer()
                 val lcd = Lcd()
-                val gpu = Gpu(lcd, display, debugDisplay)
+                val gpu = Gpu(lcd, display, debugDisplay, bgWindow)
                 val dma = Dma()
                 val interruptHandler = DefaultInterruptHandler()
                 val joyPad = Joypad(interruptHandler)

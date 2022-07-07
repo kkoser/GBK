@@ -140,7 +140,6 @@ class Lcd {
     }
 
     fun setMode(newMode: Mode, interruptHandler: InterruptHandler) {
-//        System.out.println("Setting mode ${mode.value}")
         // clear the bottom 2 bits on status
         status = status and (0b1111100 or newMode.value)
 
@@ -165,7 +164,6 @@ class Lcd {
 
     fun enabled(): Boolean {
         val enabled = control.checkBit(7)
-//        if (!enabled) println("LCD is disabled")
         return enabled
     }
 }

@@ -24,7 +24,7 @@ fun main(vararg args: String) {
     val rom = CartridgeFactory.getCartridgeForFile(gameFile)
     val timer = Timer()
     val lcd = Lcd()
-    val gpu = Gpu(lcd, NoOpRenderer())
+    val gpu = Gpu(lcd, NoOpRenderer)
     val dma = Dma()
     val interruptHandler = DefaultInterruptHandler()
     val joyPad = Joypad(interruptHandler)
